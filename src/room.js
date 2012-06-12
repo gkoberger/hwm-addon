@@ -21,13 +21,15 @@ if(saved_name) {
     user['name'] = saved_name;
 }
 
-/* STARTCHROME */
-console.log("WINDOW:");
-console.log(window.$);
-console.log($);
+$.noConflict();
 
-jQuery('body').append(jQuery('<div>', {'id': 'myCustomEventDiv'}));
-jQuery('#myCustomEventDiv').bind('myCustomEvent', function() {
+/* STARTCHROME */
+var sendUp = document.createEvent('Event');
+sendUp.initEvent('sendUp', true, true);
+
+var $transport = jQuery('<div>', {'id': 'chromeTransport'});
+jQuery('body').append($transport);
+$transport.bind('sendDown', function() {
     var r = JSON.parse(jQuery(this).text());
     if(r.type == "event") {
         jQuery('body').trigger('status_change', [r.action, r.additional]);
@@ -36,7 +38,6 @@ jQuery('#myCustomEventDiv').bind('myCustomEvent', function() {
 /* ENDCHROME */
 
 /* STARTFIREFOX */
-$.noConflict();
 
 self.on('message', function(r) {
     if(r.type == "event") {
@@ -59,7 +60,7 @@ function setupHWM() {
     player = $('player');
     /* ENDCHROME */
     /* STARTFIREFOX */
-    unsafeWindow.$('player').wrappedJSObject;
+    player = unsafeWindow.$('player').wrappedJSObject;
     /* ENDFIREFOX */
 
     // Create commercial overlay box
@@ -152,7 +153,7 @@ function setupHWM() {
 }
 
 function checkForConnection() {
-    self.postMessage({'type': 'starting!'}); // Just to trigger start_hwm in main.js
+    postMessage({'type': 'starting!'}); // Just to trigger start_hwm in main.js
 
     socket = io.connect('http://localhost:8008');
 
@@ -372,8 +373,20 @@ function notify(event, who, additional) {
 
     }
     if(msg && !is_me) {
-        self.postMessage({'type': 'notify', 'event': event, 'title': title, 'msg': msg});
+        postMessage({'type': 'notify', 'event': event, 'title': title, 'msg': msg});
     }
+}
+
+function postMessage(m) {
+        /* STARTFIREFOX */
+        self.postMessage(m);
+        /* ENDFIREFOX */
+        /* STARTCHROME */
+        console.log(m);
+        console.log(JSON.stringify(m));
+        $transport.text(JSON.stringify(m));
+        $transport[0].dispatchEvent(sendUp);
+        /* ENDCHROME */
 }
 
 function chat(who, m) {
@@ -388,7 +401,7 @@ function chat(who, m) {
     jQuery('#sidebar-out').scrollTop(1000000);
 
     if(who['id'] != user['id']) {
-        self.postMessage({'type': 'notify', 'event': 'chat', 'title': who['name'] + ' said:', 'msg': m});
+        postMessage({'type': 'notify', 'event': 'chat', 'title': who['name'] + ' said:', 'msg': m});
     }
 }
 

@@ -38,6 +38,32 @@ function checkURL(url) {
     }
 }
 
+function showNotification(message) {
+    var icon = "notification.png";
+    if(['chat', 'pause', 'play', 'seek_forward', 'seek_back', 'commercial'].indexOf(message.event) > -1) icon = "notification-" + message.event + ".png";
+
+    /* STARTFIREFOX */
+    var n = {
+        title: message.title,
+        text: message.msg,
+        iconURL: data.url(icon)
+    };
+    notifications.notify(n);
+    /* ENDFIREFOX */
+
+    /* STARTCHROME */
+    var notification = webkitNotifications.createNotification(
+        icon,  // icon url - can be relative
+        message.title,  // notification title
+        message.msg  // notification body text
+    );
+    notification.show();
+    setTimeout(function() {
+        notification.cancel();
+    }, 5000);
+    /* ENDCHROME */
+}
+
 /* STARTCHROME */
 
 /* Refresh tab when add-on is installed */
@@ -51,6 +77,12 @@ chrome.tabs.query({url:'*://*.huluwithme.com/*'}, function(tabs){
 chrome.extension.onConnect.addListener(function(_worker) {
     if(_worker.name == "hwm") {
         worker = _worker;
+        worker.onMessage.addListener(function(message) {
+            console.log('Got message!');
+            if(message.type == 'notify') {
+                showNotification(message);
+            }
+        });
     }
 });
 
@@ -109,14 +141,7 @@ exports.main = function() {
                 start_hwm();
                 _worker.on('message', function(message) {
                     if(message.type == 'notify') {
-                        var icon = "notification.png";
-                        if(['chat', 'pause', 'play', 'seek_forward', 'seek_back', 'commercial'].indexOf(message.event) > -1) icon = "notification-" + message.event + ".png";
-                        var n = {
-                            text: message.msg,
-                            iconURL: data.url(icon)
-                        };
-                        if(message.title) n.title = message.title;
-                        notifications.notify(n);
+                        showNotification(message);
                     }
                 });
                 worker = _worker;

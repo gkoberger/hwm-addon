@@ -6,11 +6,12 @@
         "permissions": [
             "webRequest",
             "tabs",
-        "http://huluwithme.com/",
-        "http://*.hulu.com/"
+            "notifications",
+            "http://huluwithme.com/",
+            "http://*.hulu.com/"
             ],
         "background": {
-            "scripts": ["main.js"]
+            "scripts": ["background.js"]
         },
         "content_scripts": [
         {

@@ -70,7 +70,8 @@ def move(fn, fix=True):
                 if not disable_ch and not meta:
                     chrome_lines.append(line)
 
-            with open('chrome/%s' % fn, 'w') as bg:
+            chrome_fn = 'background.js' if fn == 'main.js' else fn
+            with open('chrome/%s' % chrome_fn, 'w') as bg:
                 text_ch = ''.join(chrome_lines)
                 bg.write(re.sub('unsafeWindow', 'window', text_ch))
 

@@ -3,7 +3,7 @@
         scripts_count = 0;
 
     function loadScript() {
-        if(scripts.length <= scripts_count) return;
+        if(scripts.length <= scripts_count) loaded();
         var filename = scripts[scripts_count];
         var s = document.createElement('script');
         s.src = chrome.extension.getURL(filename);
@@ -17,21 +17,21 @@
     loadScript();
 })();
 
-console.log("SHould show up here...");
-var port = chrome.extension.connect({name: "hwm"});
+function loaded() {
+    var port = chrome.extension.connect({name: "hwm"});
 
-var customEvent = document.createEvent('Event');
-customEvent.initEvent('myCustomEvent', true, true);
+    var sendDown = document.createEvent('Event');
+    sendDown.initEvent('sendDown', true, true);
 
-port.onMessage.addListener(function(msg) {
-      // Send it to the script!
-      var hiddenDiv = document.getElementById('myCustomEventDiv');
-      hiddenDiv.innerText = JSON.stringify(msg);
-      hiddenDiv.dispatchEvent(customEvent);
-});
+    var hiddenDiv = document.getElementById('chromeTransport');
+    port.onMessage.addListener(function(msg) {
+          // Send it to the script!
+          hiddenDiv.innerText = JSON.stringify(msg);
+          hiddenDiv.dispatchEvent(sendDown);
+    });
 
-/*
-setTimeout(function() {
-
-}, 2500);
-*/
+    hiddenDiv.addEventListener('sendUp', function() {
+        console.log("relying " + hiddenDiv.innerText);
+        port.postMessage(JSON.parse(hiddenDiv.innerText));
+    });
+}
