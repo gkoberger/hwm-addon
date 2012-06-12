@@ -59,3 +59,78 @@ chrome.webRequest.onBeforeSendHeaders.addListener(function(details) {
 }, {urls: ["<all_urls>"]}, ["requestHeaders"]);
 
 /* ENDCHROME */
+
+/* STARTFIREFOX */
+var pageMod = require("page-mod"),
+    ss = require("simple-storage"),
+    {components} = require("chrome"),
+    observer = require("observer-service"),
+    notifications = require("notifications"),
+    data = require("self").data,
+    tabs = require("tabs");
+
+exports.main = function() {
+    function start_hwm() {
+        is_hwm = true;
+        observer.add("http-on-examine-response", watch_http);
+    }
+
+    function watch_http(subject, data) {
+        subject.QueryInterface(components.interfaces.nsIHttpChannel);
+        checkURL(subject.URI.spec);
+    }
+
+    /* Refresh tab when add-on is installed */
+    for each (var tab in tabs) {
+        if(tab.url.match(/huluwithme.com\/install/)) {
+            tab.attach({
+              contentScript:
+                'location.href="'+tab.url.replace(/install\//, "")+'"'
+            });
+        }
+    }
+
+    /* Check if the add-on is installed. */
+    pageMod.PageMod({
+        include: ["http://huluwithme.com/*"],
+        contentScriptWhen: "ready",
+        contentScriptFile: data.url("check.js")
+    });
+
+    /* Add link */
+    pageMod.PageMod({
+        include: ["http://www.hulu.com/watch/*"],
+        contentScriptWhen: "ready",
+        contentScriptFile: [data.url('jquery.js'), data.url("socket.io.js"),  data.url("room.js")],
+        contentStyleFile: [data.url('style.css')],
+        onAttach: function(_worker) {
+            if(!worker) {
+                is_ad = false;
+                start_hwm();
+                _worker.on('message', function(message) {
+                    if(message.type == 'notify') {
+                        var icon = "notification.png";
+                        if(['chat', 'pause', 'play', 'seek_forward', 'seek_back', 'commercial'].indexOf(message.event) > -1) icon = "notification-" + message.event + ".png";
+                        var n = {
+                            text: message.msg,
+                            iconURL: data.url(icon)
+                        };
+                        if(message.title) n.title = message.title;
+                        notifications.notify(n);
+                    }
+                });
+                worker = _worker;
+
+                worker.on('detach', function() {
+                    worker = false;
+                    is_hwm = false;
+                    observer.remove("http-on-examine-response", watch_http);
+                });
+            } else {
+                // Send in error! Already watchign something on hulu...
+            }
+        }
+    });
+};
+
+/* ENDFIREFOX */

@@ -1,5 +1,8 @@
+import os
 import re
 import shutil
+
+from subprocess import Popen, PIPE
 
 def main():
     move('main.js');
@@ -11,15 +14,33 @@ def main():
     move('jquery.js', False);
     move('style.css', False);
 
+    # Chrome specific
     shutil.copyfile('src/manifest.json', 'chrome/manifest.json')
     shutil.copyfile('src/room-loader.js', 'chrome/room-loader.js')
 
+    # Firefox specific
+    shutil.copyfile('src/package.json', 'firefox/package.json')
+
+    build_fx()
+
+def build_fx():
+        if os.path.exists('addon-sdk/hwm'):
+            shutil.rmtree('addon-sdk/hwm')
+
+        shutil.copytree('firefox', 'addon-sdk/hwm')
+
+        os.chdir('addon-sdk/')
+        p = Popen("source bin/activate; cfx xpi --pkgdir='hwm'", shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        os.chdir('..') # back to where we started
+
 def move(fn, fix=True):
+    fx = 'lib' if fn == "main.js" else 'data'
+
     if(not fix):
         shutil.copyfile('src/%s' % fn,
                         'chrome/%s' % fn)
         shutil.copyfile('src/%s' % fn,
-                        'firefox/%s' % fn)
+                        'firefox/%s/%s' % (fx, fn))
     else:
         with open('src/%s' % fn) as o:
             disable_ch = False;
@@ -50,9 +71,10 @@ def move(fn, fix=True):
                     chrome_lines.append(line)
 
             with open('chrome/%s' % fn, 'w') as bg:
-                bg.write(''.join(chrome_lines))
+                text_ch = ''.join(chrome_lines)
+                bg.write(re.sub('unsafeWindow', 'window', text_ch))
 
-            with open('firefox/%s' % fn, 'w') as bg:
+            with open('firefox/%s/%s' % (fx, fn), 'w') as bg:
                 bg.write(''.join(firefox_lines))
 
 if __name__ == '__main__':

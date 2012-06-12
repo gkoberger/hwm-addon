@@ -21,40 +21,29 @@ if(saved_name) {
     user['name'] = saved_name;
 }
 
-//$.noConflict();
+/* STARTCHROME */
+console.log("WINDOW:");
+console.log(window.$);
+console.log($);
 
 jQuery('body').append(jQuery('<div>', {'id': 'myCustomEventDiv'}));
-
 jQuery('#myCustomEventDiv').bind('myCustomEvent', function() {
     var r = JSON.parse(jQuery(this).text());
     if(r.type == "event") {
         jQuery('body').trigger('status_change', [r.action, r.additional]);
     }
 });
+/* ENDCHROME */
 
-/*
-var customEvent = document.createEvent('Event');
-customEvent.initEvent('myCustomEvent', true, true);
-function fireCustomEvent(data) {
-  hiddenDiv = document.getElementById('myCustomEventDiv');
-  hiddenDiv.innerText = data
-  hiddenDiv.dispatchEvent(customEvent);
-}
+/* STARTFIREFOX */
+$.noConflict();
 
-setTimeout(function() {
-    fireCustomEvent('hi');
-    console.log("Firing event..");
-}, 2000);
-*/
-
-
-/*
 self.on('message', function(r) {
     if(r.type == "event") {
         jQuery('body').trigger('status_change', [r.action, r.additional]);
     }
 });
-*/
+/* ENDFIREFOX */
 
 jQuery(document).ready(function() {
     setupHWM();
@@ -66,7 +55,12 @@ jQuery(document).ready(function() {
 
 // setup is run instantly, and adds the icons and panels.
 function setupHWM() {
+    /* STARTCHROME */
     player = $('player');
+    /* ENDCHROME */
+    /* STARTFIREFOX */
+    unsafeWindow.$('player').wrappedJSObject;
+    /* ENDFIREFOX */
 
     // Create commercial overlay box
     $commercial = jQuery('<div>', {'id': 'commercial'});
@@ -194,7 +188,7 @@ function checkForConnection() {
 
 
         // TODO: Refreshing should take us back to the show
-        window.location.hash = "hwm-" + hwm_hash;
+        unsafeWindow.location.hash = "hwm-" + hwm_hash;
 
             socket = io.connect('http://localhost:8008');
 
@@ -226,7 +220,7 @@ function checkForConnection() {
                             if(new_name) {
                                 emit_event('name_change', {'old': user['name'], 'new': new_name});
                                 user['name'] = new_name;
-                                window.localStorage['hwm-name'] = new_name;
+                                unsafeWindow.localStorage['hwm-name'] = new_name;
                             }
                             is_anon = false;
                         }
@@ -249,7 +243,7 @@ function checkForConnection() {
                 });
 
                 // Stop right there!
-                window.onbeforeunload = function() {
+                unsafeWindow.onbeforeunload = function() {
                     if(hwm_hash_current) {
                         var text = "Leaving this page will end your Huluwithme session. You'll have to start over if you want to keep watching.";
                         if(jQuery.browser.mozilla) {
@@ -305,7 +299,7 @@ function checkForConnection() {
                             $commercial_overlay.remove();
                             jQuery('.toggle-w-hwm').removeClass('on');
                             hwm_hash_current = false;
-                            window.location.hash = '';
+                            unsafeWindow.location.hash = '';
                             hwm_hash = hex_md5(new Date().getTime() + "" + Math.random()).substr(0,5);
                         }
                     }
