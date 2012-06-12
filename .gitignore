@@ -1,0 +1,9 @@
+firefox/*.js
+firefox/*.json
+firefox/*.css
+
+chrome/*.js
+chrome/*.json
+chrome/*.css
+
+*.swp
