@@ -31,7 +31,6 @@ function loaded() {
     });
 
     hiddenDiv.addEventListener('sendUp', function() {
-        console.log("relying " + hiddenDiv.innerText);
         port.postMessage(JSON.parse(hiddenDiv.innerText));
     });
 }

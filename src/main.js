@@ -52,14 +52,11 @@ function showNotification(message) {
     /* ENDFIREFOX */
 
     /* STARTCHROME */
-    console.log("NOTIFICATION");
     var notification = webkitNotifications.createNotification(
         'imgs/' + icon,  // icon url - can be relative
         message.title,  // notification title
         message.msg  // notification body text
     );
-
-    console.log(chrome.extension.getURL('imgs/' + icon));
 
     notification.show();
     setTimeout(function() {
@@ -71,9 +68,8 @@ function showNotification(message) {
 /* STARTCHROME */
 
 /* Refresh tab when add-on is installed */
-chrome.tabs.query({url:'*://*.huluwithme.com/*'}, function(tabs){
+chrome.tabs.query({url:'*://*.huluwith.me/i/*'}, function(tabs){
     for(var i = 0; i < tabs.length; i++) {
-        console.log(tabs[i]);
         chrome.tabs.reload(tabs[i].id);
     }
 });
@@ -82,7 +78,6 @@ chrome.extension.onConnect.addListener(function(_worker) {
     if(_worker.name == "hwm") {
         worker = _worker;
         worker.onMessage.addListener(function(message) {
-            console.log('Got message!');
             if(message.type == 'notify') {
                 showNotification(message);
             }
@@ -118,7 +113,7 @@ exports.main = function() {
 
     /* Refresh tab when add-on is installed */
     for each (var tab in tabs) {
-        if(tab.url.match(/huluwithme.com\/install/)) {
+        if(tab.url.match(/huluwith.me\/i\//)) {
             tab.attach({
               contentScript:
                 'location.href="'+tab.url.replace(/install\//, "")+'"'
@@ -128,7 +123,7 @@ exports.main = function() {
 
     /* Check if the add-on is installed. */
     pageMod.PageMod({
-        include: ["http://huluwithme.com/*"],
+        include: ["http://huluwith.me/*"],
         contentScriptWhen: "ready",
         contentScriptFile: data.url("check.js")
     });

@@ -3,7 +3,7 @@ var hulu_show_id = location.href.match(/watch\/([0-9]*)/)[1],
     hwm_hash_current = location.hash.match(/#hwm-([\w]*)/),
     random_hash = randomString(),
     hwm_hash = (hwm_hash_current) ? hwm_hash_current[1] : random_hash,
-    hwm_link = "http://huluwith.me/" + hwm_hash + "-" + hulu_show_id,
+    hwm_link = "http://huluwith.me/i/" + hwm_hash + "-" + hulu_show_id,
     player = false,
     in_commercial = false,
     in_ad_pool = 0,
@@ -301,7 +301,7 @@ function checkForConnection() {
                             jQuery('.toggle-w-hwm').removeClass('on');
                             hwm_hash_current = false;
                             unsafeWindow.location.hash = '';
-                            hwm_hash = hex_md5(new Date().getTime() + "" + Math.random()).substr(0,5);
+                            hwm_hash = randomString();
                         }
                     }
                     if(data.type == "start_ad") {
@@ -382,8 +382,6 @@ function postMessage(m) {
         self.postMessage(m);
         /* ENDFIREFOX */
         /* STARTCHROME */
-        console.log(m);
-        console.log(JSON.stringify(m));
         $transport.text(JSON.stringify(m));
         $transport[0].dispatchEvent(sendUp);
         /* ENDCHROME */
@@ -400,7 +398,7 @@ function chat(who, m) {
     jQuery('#sidebar-ul').append($li);
     jQuery('#sidebar-out').scrollTop(1000000);
 
-    if(who['id'] != user['id']) {
+    if(who['id'] != user['id'] && ! jQuery(document.activeElement).is('#sidebar textarea:focus')) {
         postMessage({'type': 'notify', 'event': 'chat', 'title': who['name'] + ' said:', 'msg': m});
     }
 }
