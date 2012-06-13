@@ -350,7 +350,7 @@
 
     function changeName() {
         var new_name = prompt("What do you want to use as a username?", user['name']);
-        if(new_name) {
+        if(new_name && new_name != user['name']) {
             emit_event('name_change', {'old': user['name'], 'new': new_name});
             user['name'] = new_name;
             unsafeWindow.localStorage['hwm-name'] = new_name;
