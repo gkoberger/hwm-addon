@@ -13,7 +13,9 @@ var hulu_show_id = location.href.match(/watch\/([0-9]*)/)[1],
     $commercial, $commerical_overlay, pause, status_text, status_action, status_type,
     is_anon = true,
     user = {'name': "Anon " + Math.round(Math.random() * 1000),
-            'id': (Math.round(Math.random() * 1000) +"-"+ (new Date().getTime() + "").substr(-5))};
+            'id': (Math.round(Math.random() * 1000) +"-"+ (new Date().getTime() + "").substr(-5))},
+    user_other = {'name': 'The other person', 'id': false};
+
 
 var saved_name = window.localStorage.getItem("hwm-name");
 if(saved_name) {
@@ -143,7 +145,7 @@ function setupHWM() {
                 $commercial.show();
                 $commercial_overlay.show();
                 player.pauseEverything();
-                notify('commercial', {name: '', id:''})
+                notify('commercial', user_other);
             }
         }
 
@@ -256,10 +258,12 @@ function checkForConnection() {
                     }
                 };
                 socket.on('chat', function(data) {
+                    user_other = data.who;
                     chat(data.who, data.msg);
                 });
 
                 socket.on('event', function(data) {
+                    user_other = data.who;
                     if(data.type == "pause") {
                         player.pauseEverything();
                         notify("pause", data.who);
@@ -307,13 +311,9 @@ function checkForConnection() {
                     if(data.type == "start_ad") {
                         cl("Ad break");
                         other_in_ad = true;
-                        /*
-                        // TODO: Show this if user is ahead of other in time.
-                        if(ad_status == "end_ad") {
-                            $commercial.show();
-                            $commercial_overlay.show();
-                        }
-                        */
+
+                        // Pause if other person starts ad!
+                        watchForAd(data);
                     } else if(data.type == "end_ad") {
                         other_in_ad = false;
                         $commercial.hide();
@@ -340,6 +340,7 @@ function notify(event, who, additional) {
     var msg = false, title = false;
     var is_me = is_user(who);
     var name = is_me ? "You" : who['name'];
+
     if(event == "pause") {
         title = "Paused";
         msg = name + " paused the video";
@@ -353,7 +354,7 @@ function notify(event, who, additional) {
         is_paused = false;
     }
     if(event == "commercial") {
-        title = "Other person is still in commercials";
+        title = name + " is still in commercials";
         msg = "The video will play automatically when they're done.";
     }
     if(event == "seek") {
@@ -433,6 +434,20 @@ function changeName() {
     }
     is_anon = false;
     return false;
+}
+
+function watchForAd(data) {
+    console.log("Watching for ad...");
+    if(ad_status == "start_ad") return;
+    var time = getPlayerTime()
+    if(time > data.time) {
+        player.seekAndPause(data.time);
+        $commercial.show();
+        $commercial_overlay.show();
+        notify('commercial', data.who)
+    } else if(time <= data.time && ad_status == "end_ad") {
+        setTimeout(function() { watchForAd(data); }, 1000);
+    }
 }
 
 function randomString() {

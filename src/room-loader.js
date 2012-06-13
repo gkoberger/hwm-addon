@@ -3,7 +3,10 @@
         scripts_count = 0;
 
     function loadScript() {
-        if(scripts.length <= scripts_count) loaded();
+        if(scripts.length <= scripts_count) {
+            loaded();
+            return;
+        }
         var filename = scripts[scripts_count];
         var s = document.createElement('script');
         s.src = chrome.extension.getURL(filename);
