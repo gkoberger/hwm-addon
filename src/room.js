@@ -365,12 +365,14 @@ function notify(event, who, additional) {
             title = "Skipping Back";
             msg = name + " skipped back " + difference + " seconds";
             event = 'seek_back';
+            symbol = '« ';
         } else {
             title = "Skipping Ahead";
             msg = name + " skipped forward " + difference + " seconds";
             event = 'seek_forward';
+            symbol = '» ';
         }
-        cl(msg);
+        cl(symbol + msg);
 
     }
     if(msg && !is_me) {
