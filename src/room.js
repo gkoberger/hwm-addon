@@ -1,203 +1,201 @@
 (function() {
-var hulu_show_id = location.href.match(/watch\/([0-9]*)/)[1],
-    hwm_hash_current = location.hash.match(/#hwm-([\w]*)/),
-    random_hash = randomString(),
-    hwm_hash = (hwm_hash_current) ? hwm_hash_current[1] : random_hash,
-    hwm_link = "http://huluwith.me/i/" + hwm_hash + "-" + hulu_show_id,
-    player = false,
-    in_commercial = false,
-    in_ad_pool = 0,
-    socket = false,
-    started = false,
-    is_paused = false,
-    $commercial, $commerical_overlay, pause, status_text, status_action, status_type,
-    is_anon = true,
-    user = {'name': "Anon " + Math.round(Math.random() * 1000),
-            'id': (Math.round(Math.random() * 1000) +"-"+ (new Date().getTime() + "").substr(-5))},
-    user_other = {'name': 'The other person', 'id': false};
+    var hulu_show_id = location.href.match(/watch\/([0-9]*)/)[1],
+        hwm_hash_current = location.hash.match(/#hwm-([\w]*)/),
+        random_hash = randomString(),
+        hwm_hash = (hwm_hash_current) ? hwm_hash_current[1] : random_hash,
+        hwm_link = "http://huluwith.me/i/" + hwm_hash + "-" + hulu_show_id,
+        player = false,
+        in_commercial = false,
+        in_ad_pool = 0,
+        socket = false,
+        started = false,
+        is_paused = false,
+        $commercial, $commerical_overlay, pause, status_text, status_action, status_type,
+        is_anon = true,
+        user = {'name': "Anon " + Math.round(Math.random() * 1000),
+                'id': (Math.round(Math.random() * 1000) +"-"+ (new Date().getTime() + "").substr(-5))},
+        user_other = {'name': 'The other person', 'id': false};
 
-
-var saved_name = window.localStorage.getItem("hwm-name");
-if(saved_name) {
-    is_anon = false;
-    user['name'] = saved_name;
-}
-
-$.noConflict();
-
-/* STARTCHROME */
-var sendUp = document.createEvent('Event');
-sendUp.initEvent('sendUp', true, true);
-
-var $transport = jQuery('<div>', {'id': 'chromeTransport'});
-jQuery('body').append($transport);
-$transport.bind('sendDown', function() {
-    var r = JSON.parse(jQuery(this).text());
-    if(r.type == "event") {
-        jQuery('body').trigger('status_change', [r.action, r.additional]);
-    }
-});
-/* ENDCHROME */
-
-/* STARTFIREFOX */
-
-self.on('message', function(r) {
-    if(r.type == "event") {
-        jQuery('body').trigger('status_change', [r.action, r.additional]);
-    }
-});
-/* ENDFIREFOX */
-
-jQuery(document).ready(function() {
-    setupHWM();
-    if(hwm_hash_current) {
-        // The user clicked a link to get here.
-        startHWM();
-    }
-});
-
-// setup is run instantly, and adds the icons and panels.
-function setupHWM() {
-    /* STARTCHROME */
-    player = $('player');
-    /* ENDCHROME */
-    /* STARTFIREFOX */
-    player = unsafeWindow.$('player').wrappedJSObject;
-    /* ENDFIREFOX */
-
-    // Create commercial overlay box
-    $commercial = jQuery('<div>', {'id': 'commercial'});
-    $commercial.append(jQuery('<strong>', {'text': 'Other person is still in the commercial'}));
-    $commercial.append(jQuery('<div>', {'text': "Your video will start when they're done."}));
-    $commercial_overlay = jQuery('<div>', {'id': 'commercial-overlay'});
-    jQuery('#player-container').append($commercial_overlay);
-    jQuery('#player-container').append($commercial);
-    $commercial_overlay.hide();
-    $commercial.hide();
-
-    /* Add HWM tab */
-    jQuery('#watch-title-top').append(jQuery('#description-switch')); // Make the options box wider
-    var $tab_a = jQuery('<a>', {'class': 'toggle-w-hwm ' + (hwm_hash_current ? 'on' : ''), 'href': '#', 'id': 'hwm-tab'}),
-        $tab_div = jQuery('<div>', {'class': 'link-description-damnfirefox36'}),
-        $tab_span = jQuery('<span>'),
-        $tab_desc = jQuery('<div>', {'class': 'hwm-tab-desc link-description', 'html': '<strong>hulu</strong>withme'});
-
-
-    jQuery('#description-switch').append($tab_a);
-    $tab_a.append($tab_div);
-    $tab_div.append($tab_span);
-    $tab_div.append($tab_desc);
-
-    $tab_a.click(function(e) {
-        e.preventDefault();
-        if(hwm_hash_current) {
-            alert('Huluwithme is already running!');
-            return;
+        var saved_name = window.localStorage.getItem("hwm-name");
+        if(saved_name) {
+            is_anon = false;
+            user['name'] = saved_name;
         }
 
-        var $body = jQuery('body');
-        jQuery('.hwm_new').remove();
-        $hwm_new_overlay = jQuery('<div>', {'class': 'hwm_new hwm_new_overlay'});
-        $hwm_new_modal = jQuery('<div>', {'class': 'hwm_new hwm_new_modal'});
-        $body.append($hwm_new_overlay);
-        $body.append($hwm_new_modal);
+        $.noConflict();
 
-        var $hwm_new_input = jQuery('<input>', {'value': hwm_link});
-        var $hwm_new_close = jQuery('<a>', {'text': 'cancel', 'class': 'close', 'href': '#'});
+        /* STARTCHROME */
+        var sendUp = document.createEvent('Event');
+        sendUp.initEvent('sendUp', true, true);
 
-        $hwm_new_modal.append(jQuery('<div>', {'id': 'hwm-logo'}));
-        $hwm_new_modal.append(jQuery('<p>', {'text': 'Watch your favorite show with your favorite person'}));
-        $hwm_new_modal.append(jQuery('<label>', {'text': 'Send this link to the person you want to watch with:'}));
-        $hwm_new_modal.append($hwm_new_input);
-        $hwm_new_modal.append(jQuery('<p>', {'text': 'Your video will start automatically from the beginning when they click the link.'}));
-        $hwm_new_modal.append($hwm_new_close);
-
-        function close_modal() {
-            $hwm_new_overlay.remove();
-            $hwm_new_modal.remove();
-            return false;
-        }
-        $hwm_new_close.click(close_modal);
-        $hwm_new_overlay.click(close_modal);
-
-        player.pauseEverything();
-
-        checkForConnection();
-    });
-
-    jQuery('body').bind('status_change', function(e, status, additional) {
-        var status_send = false;
-        if(status == "play" || status == "centerplay") {
-            status_send = "play";
-            notify("play", user);
-        } else if (status == "pause" || status == "centerpause") {
-            status_send = "pause";
-            notify("pause", user);
-        } else if (status == "seek") {
-            status_send = "seek";
-            additional['old_time'] = getPlayerTime();
-            notify("seek", user, additional);
-        } else if (status == "start_ad" || status == "end_ad") {
-            status_send = status;
-            ad_status = status;
-
-            if(ad_status == "end_ad" && other_in_ad) {
-                $commercial.show();
-                $commercial_overlay.show();
-                player.pauseEverything();
-                notify('commercial', user_other);
+        var $transport = jQuery('<div>', {'id': 'chromeTransport'});
+        jQuery('body').append($transport);
+        $transport.bind('sendDown', function() {
+            var r = JSON.parse(jQuery(this).text());
+            if(r.type == "event") {
+                jQuery('body').trigger('status_change', [r.action, r.additional]);
             }
+        });
+        /* ENDCHROME */
+
+        /* STARTFIREFOX */
+
+        self.on('message', function(r) {
+            if(r.type == "event") {
+                jQuery('body').trigger('status_change', [r.action, r.additional]);
+            }
+        });
+        /* ENDFIREFOX */
+
+        jQuery(document).ready(function() {
+            setupHWM();
+            if(hwm_hash_current) {
+                // The user clicked a link to get here.
+                startHWM();
+            }
+        });
+
+        // setup is run instantly, and adds the icons and panels.
+        function setupHWM() {
+            /* STARTCHROME */
+            player = $('player');
+            /* ENDCHROME */
+            /* STARTFIREFOX */
+            player = unsafeWindow.$('player').wrappedJSObject;
+            /* ENDFIREFOX */
+
+            // Create commercial overlay box
+            $commercial = jQuery('<div>', {'id': 'commercial'});
+            $commercial.append(jQuery('<strong>', {'text': 'Other person is still in the commercial'}));
+            $commercial.append(jQuery('<div>', {'text': "Your video will start when they're done."}));
+            $commercial_overlay = jQuery('<div>', {'id': 'commercial-overlay'});
+            jQuery('#player-container').append($commercial_overlay);
+            jQuery('#player-container').append($commercial);
+            $commercial_overlay.hide();
+            $commercial.hide();
+
+            /* Add HWM tab */
+            jQuery('#watch-title-top').append(jQuery('#description-switch')); // Make the options box wider
+            var $tab_a = jQuery('<a>', {'class': 'toggle-w-hwm ' + (hwm_hash_current ? 'on' : ''), 'href': '#', 'id': 'hwm-tab'}),
+            $tab_div = jQuery('<div>', {'class': 'link-description-damnfirefox36'}),
+            $tab_span = jQuery('<span>'),
+            $tab_desc = jQuery('<div>', {'class': 'hwm-tab-desc link-description', 'html': '<strong>hulu</strong>withme'});
+
+
+            jQuery('#description-switch').append($tab_a);
+            $tab_a.append($tab_div);
+            $tab_div.append($tab_span);
+            $tab_div.append($tab_desc);
+
+            $tab_a.click(function(e) {
+                e.preventDefault();
+                if(hwm_hash_current) {
+                    alert('Huluwithme is already running!');
+                    return;
+                }
+
+                var $body = jQuery('body');
+                jQuery('.hwm_new').remove();
+                $hwm_new_overlay = jQuery('<div>', {'class': 'hwm_new hwm_new_overlay'});
+                $hwm_new_modal = jQuery('<div>', {'class': 'hwm_new hwm_new_modal'});
+                $body.append($hwm_new_overlay);
+                $body.append($hwm_new_modal);
+
+                var $hwm_new_input = jQuery('<input>', {'value': hwm_link});
+                var $hwm_new_close = jQuery('<a>', {'text': 'cancel', 'class': 'close', 'href': '#'});
+
+                $hwm_new_modal.append(jQuery('<div>', {'id': 'hwm-logo'}));
+                $hwm_new_modal.append(jQuery('<p>', {'text': 'Watch your favorite show with your favorite person'}));
+                $hwm_new_modal.append(jQuery('<label>', {'text': 'Send this link to the person you want to watch with:'}));
+                $hwm_new_modal.append($hwm_new_input);
+                $hwm_new_modal.append(jQuery('<p>', {'text': 'Your video will start automatically from the beginning when they click the link.'}));
+                $hwm_new_modal.append($hwm_new_close);
+
+                function close_modal() {
+                    $hwm_new_overlay.remove();
+                    $hwm_new_modal.remove();
+                    return false;
+                }
+                $hwm_new_close.click(close_modal);
+                $hwm_new_overlay.click(close_modal);
+
+                player.pauseEverything();
+
+                checkForConnection();
+            });
+
+            jQuery('body').bind('status_change', function(e, status, additional) {
+                var status_send = false;
+                if(status == "play" || status == "centerplay") {
+                    status_send = "play";
+                    notify("play", user);
+                } else if (status == "pause" || status == "centerpause") {
+                    status_send = "pause";
+                    notify("pause", user);
+                } else if (status == "seek") {
+                    status_send = "seek";
+                    additional['old_time'] = getPlayerTime();
+                    notify("seek", user, additional);
+                } else if (status == "start_ad" || status == "end_ad") {
+                    status_send = status;
+                    ad_status = status;
+
+                    if(ad_status == "end_ad" && other_in_ad) {
+                        $commercial.show();
+                        $commercial_overlay.show();
+                        player.pauseEverything();
+                        notify('commercial', user_other);
+                    }
+                }
+
+                if(status_send) {
+                    emit_event(status_send, additional);
+                }
+            });
         }
 
-        if(status_send) {
-            emit_event(status_send, additional);
+        function checkForConnection() {
+            postMessage({'type': 'starting!'}); // Just to trigger start_hwm in main.js
+
+            socket = io.connect('http://localhost:8008');
+
+            socket.on('connect', function() {
+                socket.emit('join', {'room': hwm_hash});
+            });
+            socket.on('event', function(data) {
+                if(data.type == "join") {
+                    window.location.href = hwm_link;
+                }
+            });
         }
-    });
-}
 
-function checkForConnection() {
-    postMessage({'type': 'starting!'}); // Just to trigger start_hwm in main.js
+        var ad_status = false,
+            other_in_ad = false;
+        function startHWM() {
+            var $sidebar = jQuery('<div>', {'id': 'sidebar'}),
+                $sb_in = jQuery('<div>', {'id': 'sidebar-in'}),
+                $sb_out = jQuery('<div>', {'id': 'sidebar-out'}),
+                $sb_ul = jQuery('<ul>', {'id': 'sidebar-ul'}),
+                $sb_ta = jQuery('<textarea>', {'placeholder': 'Type here to chat while you watch! Hit <enter> to send.', 'css': {'border': '0 none', 'border-top': '1px solid #ccc'}}),
+                $sb_who = jQuery('<a>', {'href': '#', 'id': 'chat-who', 'text': 'You are ', 'title': 'Edit name'}),
+                $sb_name = jQuery('<strong>', {'id': 'chat-name', 'text': user['name']});
 
-    socket = io.connect('http://localhost:8008');
+            var $ch = jQuery('<div>', {'id': 'chat-head'}),
+                $ch_strong = jQuery('<strong>', {'text': 'hulu'})
+                $ch_rest = jQuery('<span>', {'text': 'withme'});
 
-    socket.on('connect', function() {
-        socket.emit('join', {'room': hwm_hash});
-    });
-    socket.on('event', function(data) {
-        if(data.type == "join") {
-            window.location.href = hwm_link;
-        }
-    });
-}
+            $ch.append($ch_strong).append($ch_rest);
+            $sidebar.append($ch);
+            $sidebar.append($sb_who);
+            $sb_who.append($sb_name);
 
-    var ad_status = false,
-        other_in_ad = false;
-    function startHWM() {
-        var $sidebar = jQuery('<div>', {'id': 'sidebar'}),
-            $sb_in = jQuery('<div>', {'id': 'sidebar-in'}),
-            $sb_out = jQuery('<div>', {'id': 'sidebar-out'}),
-            $sb_ul = jQuery('<ul>', {'id': 'sidebar-ul'}),
-            $sb_ta = jQuery('<textarea>', {'placeholder': 'Type here to chat while you watch! Hit <enter> to send.', 'css': {'border': '0 none', 'border-top': '1px solid #ccc'}}),
-            $sb_who = jQuery('<a>', {'href': '#', 'id': 'chat-who', 'text': 'You are ', 'title': 'Edit name'}),
-            $sb_name = jQuery('<strong>', {'id': 'chat-name', 'text': user['name']});
+            $sb_who.click(changeName);
 
-        var $ch = jQuery('<div>', {'id': 'chat-head'}),
-            $ch_strong = jQuery('<strong>', {'text': 'hulu'})
-            $ch_rest = jQuery('<span>', {'text': 'withme'});
+            var $li = jQuery('<li>', {'text': 'Huluwithme is still in early beta. Please report absolutely any problems you find to gkoberger@gmail.com', 'class': 'beta'});
+            $sb_ul.append($li);
 
-        $ch.append($ch_strong).append($ch_rest);
-        $sidebar.append($ch);
-        $sidebar.append($sb_who);
-        $sb_who.append($sb_name);
-
-        $sb_who.click(changeName);
-
-        var $li = jQuery('<li>', {'text': 'Huluwithme is still in early beta. Please report absolutely any problems you find to gkoberger@gmail.com', 'class': 'beta'});
-        $sb_ul.append($li);
-
-
-        // TODO: Refreshing should take us back to the show
-        unsafeWindow.location.hash = "hwm-" + hwm_hash;
+            // TODO: Refreshing should take us back to the show
+            unsafeWindow.location.hash = "hwm-" + hwm_hash;
 
             socket = io.connect('http://localhost:8008');
 
@@ -324,143 +322,143 @@ function checkForConnection() {
                     }
                 });
             }
-    }
-
-function cl(m) {
-    var $li = jQuery('<li>', {'text': m, 'class': 'event'});
-    jQuery('#sidebar-ul').append($li);
-    jQuery('#sidebar-out').scrollTop(1000000);
-}
-
-function is_user(who) {
-    return who['id'] == user['id'];
-}
-
-function notify(event, who, additional) {
-    var msg = false, title = false;
-    var is_me = is_user(who);
-    var name = is_me ? "You" : who['name'];
-
-    if(event == "pause") {
-        title = "Paused";
-        msg = name + " paused the video";
-        cl('❙❙ ' + name + ' paused the video');
-        is_paused = true;
-    }
-    if(event == "play") {
-        title = "Playing";
-        msg = name + " played the video";
-        cl('▶ ' + name + ' played the video');
-        is_paused = false;
-    }
-    if(event == "commercial") {
-        title = name + " is still in commercials";
-        msg = "The video will play automatically when they're done.";
-    }
-    if(event == "seek") {
-        var current_time = additional.old_time;
-        var difference = Math.round(Math.abs(current_time - additional.new_time));
-
-        if(current_time > additional.new_time) {
-            title = "Skipping Back";
-            msg = name + " skipped back " + difference + " seconds";
-            event = 'seek_back';
-            symbol = '« ';
-        } else {
-            title = "Skipping Ahead";
-            msg = name + " skipped forward " + difference + " seconds";
-            event = 'seek_forward';
-            symbol = '» ';
         }
-        cl(symbol + msg);
 
-    }
-    if(msg && !is_me) {
-        postMessage({'type': 'notify', 'event': event, 'title': title, 'msg': msg});
-    }
-}
+        function cl(m) {
+            var $li = jQuery('<li>', {'text': m, 'class': 'event'});
+            jQuery('#sidebar-ul').append($li);
+            jQuery('#sidebar-out').scrollTop(1000000);
+        }
 
-function postMessage(m) {
-        /* STARTFIREFOX */
-        self.postMessage(m);
-        /* ENDFIREFOX */
-        /* STARTCHROME */
-        $transport.text(JSON.stringify(m));
-        $transport[0].dispatchEvent(sendUp);
-        /* ENDCHROME */
-}
+        function is_user(who) {
+            return who['id'] == user['id'];
+        }
 
-function chat(who, m) {
-    var $li = jQuery('<li>');
-    var $strong = jQuery('<strong>', {'text': who['name'] + ": "});
-    var $span = jQuery('<span>', {'text': m});
+        function notify(event, who, additional) {
+            var msg = false, title = false;
+            var is_me = is_user(who);
+            var name = is_me ? "You" : who['name'];
 
-    $li.append($strong);
-    $li.append($span);
+            if(event == "pause") {
+                title = "Paused";
+                msg = name + " paused the video";
+                cl('❙❙ ' + name + ' paused the video');
+                is_paused = true;
+            }
+            if(event == "play") {
+                title = "Playing";
+                msg = name + " played the video";
+                cl('▶ ' + name + ' played the video');
+                is_paused = false;
+            }
+            if(event == "commercial") {
+                title = name + " is still in commercials";
+                msg = "The video will play automatically when they're done.";
+            }
+            if(event == "seek") {
+                var current_time = additional.old_time;
+                var difference = Math.round(Math.abs(current_time - additional.new_time));
 
-    jQuery('#sidebar-ul').append($li);
-    jQuery('#sidebar-out').scrollTop(1000000);
+                if(current_time > additional.new_time) {
+                    title = "Skipping Back";
+                    msg = name + " skipped back " + difference + " seconds";
+                    event = 'seek_back';
+                    symbol = '« ';
+                } else {
+                    title = "Skipping Ahead";
+                    msg = name + " skipped forward " + difference + " seconds";
+                    event = 'seek_forward';
+                    symbol = '» ';
+                }
+                cl(symbol + msg);
 
-    if(who['id'] != user['id'] && ! jQuery(document.activeElement).is('#sidebar textarea:focus')) {
-        postMessage({'type': 'notify', 'event': 'chat', 'title': who['name'] + ' said:', 'msg': m});
-    }
-}
+            }
+            if(msg && !is_me) {
+                postMessage({'type': 'notify', 'event': event, 'title': title, 'msg': msg});
+            }
+        }
 
-function emit_event(status, stuff) {
-    if(!socket) return;
-    if(!stuff) stuff = {};
-    var time = false;
-    if(player) {
-        time = getPlayerTime();
-    }
-    stuff['type'] = status;
-    stuff['room'] = hwm_hash;
-    stuff['time'] = time;
-    stuff['started'] = started;
-    stuff['who'] = user;
-    socket.emit('event', stuff);
-}
+        function postMessage(m) {
+            /* STARTFIREFOX */
+            self.postMessage(m);
+            /* ENDFIREFOX */
+            /* STARTCHROME */
+            $transport.text(JSON.stringify(m));
+            $transport[0].dispatchEvent(sendUp);
+            /* ENDCHROME */
+        }
 
-function getPlayerTime() {
-    if(!player) return 0;
-    return player.getCurrentTime() / 1000;
-}
+        function chat(who, m) {
+            var $li = jQuery('<li>');
+            var $strong = jQuery('<strong>', {'text': who['name'] + ": "});
+            var $span = jQuery('<span>', {'text': m});
 
-function changeName() {
-    var new_name = prompt("What do you want to use as a username?", user['name']);
-    if(new_name) {
-        emit_event('name_change', {'old': user['name'], 'new': new_name});
-        user['name'] = new_name;
-        unsafeWindow.localStorage['hwm-name'] = new_name;
-        jQuery('#chat-name').text(new_name);
-    }
-    is_anon = false;
-    return false;
-}
+            $li.append($strong);
+            $li.append($span);
 
-function watchForAd(data) {
-    console.log("Watching for ad...");
-    if(ad_status == "start_ad") return;
-    var time = getPlayerTime()
-    if(time > data.time + 1) { // Give it 1 second leway
-        player.seekAndPause(data.time);
-        $commercial.show();
-        $commercial_overlay.show();
-        notify('commercial', data.who)
-    } else {
-        setTimeout(function() { watchForAd(data); }, 1000);
-    }
-}
+            jQuery('#sidebar-ul').append($li);
+            jQuery('#sidebar-out').scrollTop(1000000);
 
-function randomString() {
-    var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
-	var string_length = 5;
-	var rs = '';
-	for (var i=0; i<string_length; i++) {
-		var rnum = Math.floor(Math.random() * chars.length);
-		rs += chars.substring(rnum,rnum+1);
-	}
-	return rs;
-}
+            if(who['id'] != user['id'] && ! jQuery(document.activeElement).is('#sidebar textarea:focus')) {
+                postMessage({'type': 'notify', 'event': 'chat', 'title': who['name'] + ' said:', 'msg': m});
+            }
+        }
+
+        function emit_event(status, stuff) {
+            if(!socket) return;
+            if(!stuff) stuff = {};
+            var time = false;
+            if(player) {
+                time = getPlayerTime();
+            }
+            stuff['type'] = status;
+            stuff['room'] = hwm_hash;
+            stuff['time'] = time;
+            stuff['started'] = started;
+            stuff['who'] = user;
+            socket.emit('event', stuff);
+        }
+
+        function getPlayerTime() {
+            if(!player) return 0;
+            return player.getCurrentTime() / 1000;
+        }
+
+        function changeName() {
+            var new_name = prompt("What do you want to use as a username?", user['name']);
+            if(new_name) {
+                emit_event('name_change', {'old': user['name'], 'new': new_name});
+                user['name'] = new_name;
+                unsafeWindow.localStorage['hwm-name'] = new_name;
+                jQuery('#chat-name').text(new_name);
+            }
+            is_anon = false;
+            return false;
+        }
+
+        function watchForAd(data) {
+            console.log("Watching for ad...");
+            if(ad_status == "start_ad") return;
+            var time = getPlayerTime()
+            if(time > data.time + 1) { // Give it 1 second leway
+                player.seekAndPause(data.time);
+                $commercial.show();
+                $commercial_overlay.show();
+                notify('commercial', data.who)
+            } else {
+                setTimeout(function() { watchForAd(data); }, 1000);
+            }
+        }
+
+        function randomString() {
+            var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
+            var string_length = 5;
+            var rs = '';
+            for (var i=0; i<string_length; i++) {
+                var rnum = Math.floor(Math.random() * chars.length);
+                rs += chars.substring(rnum,rnum+1);
+            }
+            return rs;
+        }
 
 })();
