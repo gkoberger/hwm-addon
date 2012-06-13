@@ -445,11 +445,17 @@
             if(data.type == "disconnect") {
                 if(started) {
                     alert('The other person disconnected! You can continue watching, but you are no longer synced.');
+                    socket = false; // Don't think this does anything...
+
+                    connected = false;
+
                     player.pauseEverything();
                     $sidebar.remove();
                     $commercial.remove();
                     $commercial_overlay.remove();
+
                     jQuery('.toggle-w-hwm').removeClass('on');
+
                     hwm_hash_current = false;
                     unsafeWindow.location.hash = '';
                     hwm_hash = randomString();
@@ -495,14 +501,8 @@
 
         // Stop right there!
         unsafeWindow.onbeforeunload = function() {
-            if(hwm_hash_current) {
-                var text = "Leaving this page will end your Huluwithme session. You'll have to start over if you want to keep watching.";
-                if(jQuery.browser.mozilla) {
-                    alert(text);
-                    return false;
-                } else {
-                    return text;
-                }
+            if(connected) {
+                return "Leaving this page will end your Huluwithme session. You'll have to start over if you want to keep watching.";
             }
         };
 
