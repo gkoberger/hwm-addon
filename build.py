@@ -78,12 +78,19 @@ def move(fn, fix=True):
                 if not disable_ch and not meta:
                     chrome_lines.append(line)
 
+            # Chrome
             chrome_fn = 'background.js' if fn == 'main.js' else fn
+            if(os.path.exists(chrome_fn)):
+                os.remove(chrome_fn)
             with open('chrome/%s' % chrome_fn, 'w') as bg:
                 text_ch = ''.join(chrome_lines)
                 bg.write(re.sub('unsafeWindow', 'window', text_ch))
 
-            with open('firefox/%s/%s' % (fx, fn), 'w') as bg:
+            # Fx
+            firefox_fn = 'firefox/%s/%s' % (fx, fn)
+            if(os.path.exists(firefox_fn)):
+                os.remove(firefox_fn)
+            with open(firefox_fn, 'w') as bg:
                 bg.write(''.join(firefox_lines))
 
 if __name__ == '__main__':

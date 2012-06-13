@@ -192,7 +192,7 @@
 #chat-who {
     display: block;
     text-decoration: none;
-    font-weight: normal;
+    font-weight: normal !important;
     position: absolute;
     border: 10px !important;
     top: 43px;
