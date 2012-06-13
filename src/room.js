@@ -367,7 +367,7 @@
     function startSocket() {
         if(socket) return;
         console.log("STARTING SOCKET!");
-        socket = io.connect('http://localhost:8008');
+        socket = io.connect('http://huluwithme.herokuapp.com/');
 
         socket.on('connect', function() {
             socket.emit('join', {'room': hwm_hash, 'who': user});
