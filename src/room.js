@@ -442,12 +442,12 @@ function watchForAd(data) {
     console.log("Watching for ad...");
     if(ad_status == "start_ad") return;
     var time = getPlayerTime()
-    if(time > data.time) {
+    if(time > data.time + 1) { // Give it 1 second leway
         player.seekAndPause(data.time);
         $commercial.show();
         $commercial_overlay.show();
         notify('commercial', data.who)
-    } else if(time <= data.time && ad_status == "end_ad") {
+    } else {
         setTimeout(function() { watchForAd(data); }, 1000);
     }
 }
