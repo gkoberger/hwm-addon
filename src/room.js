@@ -498,9 +498,16 @@
             if(player.pauseEverything) {
                 player.pauseEverything();
             } else {
-                setTimeout(function() {
-                    player.pauseEverything();
-                }, 500);
+                (function() {
+                    var limit = 3;
+                    var pause_interval = setInterval(function() {
+                        limit--;
+                        if(limit <= 0) clearInterval(pause_interval);
+                        if(player.pauseEverything) {
+                            player.pauseEverything();
+                        }
+                    }, 500);
+                })();
             }
         }
     }
