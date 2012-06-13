@@ -11,8 +11,9 @@
         started = false,
         is_paused = false,
         $commercial, $commerical_overlay, pause, status_text, status_action, status_type,
-        $hwm_new_overlay, $hwm_new_modal,
+        $hwm_new_overlay, $hwm_new_modal, $sidebar, $sb_ul, $sb_out,
         is_anon = true,
+        connected = false, // Don't rerun connectionSuccessful
         user = {'name': "Anon " + Math.round(Math.random() * 1000),
                 'id': (Math.round(Math.random() * 1000) +"-"+ (new Date().getTime() + "").substr(-5))},
         user_other = {'name': 'The other person', 'id': false};
@@ -78,9 +79,9 @@
         /* Add HWM tab */
         jQuery('#watch-title-top').append(jQuery('#description-switch')); // Make the options box wider
         var $tab_a = jQuery('<a>', {'class': 'toggle-w-hwm ' + (hwm_hash_current ? 'on' : ''), 'href': '#', 'id': 'hwm-tab'}),
-        $tab_div = jQuery('<div>', {'class': 'link-description-damnfirefox36'}),
-        $tab_span = jQuery('<span>'),
-        $tab_desc = jQuery('<div>', {'class': 'hwm-tab-desc link-description', 'html': '<strong>hulu</strong>withme'});
+            $tab_div = jQuery('<div>', {'class': 'link-description-damnfirefox36'}),
+            $tab_span = jQuery('<span>'),
+            $tab_desc = jQuery('<div>', {'class': 'hwm-tab-desc link-description', 'html': '<strong>hulu</strong>withme'});
 
 
         jQuery('#description-switch').append($tab_a);
@@ -94,6 +95,8 @@
                 alert('Huluwithme is already running!');
                 return;
             }
+
+            $tab_a.addClass('on');
 
             var $body = jQuery('body');
             jQuery('.hwm_new').remove();
@@ -173,10 +176,11 @@
     function startHWM() {
         startSocket();
 
-        var $sidebar = jQuery('<div>', {'id': 'sidebar'}),
-            $sb_in = jQuery('<div>', {'id': 'sidebar-in'}),
-            $sb_out = jQuery('<div>', {'id': 'sidebar-out'}),
-            $sb_ul = jQuery('<ul>', {'id': 'sidebar-ul'}),
+        $sidebar = jQuery('<div>', {'id': 'sidebar'}).hide();
+        $sb_ul = jQuery('<ul>', {'id': 'sidebar-ul'});
+        $sb_out = jQuery('<div>', {'id': 'sidebar-out'});
+
+        var $sb_in = jQuery('<div>', {'id': 'sidebar-in'}),
             $sb_ta = jQuery('<textarea>', {'placeholder': 'Type here to chat while you watch! Hit <enter> to send.', 'css': {'border': '0 none', 'border-top': '1px solid #ccc'}}),
             $sb_who = jQuery('<a>', {'href': '#', 'id': 'chat-who', 'text': 'You are ', 'title': 'Edit name'}),
             $sb_name = jQuery('<strong>', {'id': 'chat-name', 'text': user['name']});
@@ -185,6 +189,12 @@
             $ch_strong = jQuery('<strong>', {'text': 'hulu'})
             $ch_rest = jQuery('<span>', {'text': 'withme'});
 
+        jQuery('body').prepend($sidebar);
+        $sidebar.append($sb_in);
+        $sb_in.append($sb_out);
+        $sb_out.append($sb_ul);
+        $sidebar.append($sb_ta);
+
         $ch.append($ch_strong).append($ch_rest);
         $sidebar.append($ch);
         $sidebar.append($sb_who);
@@ -192,66 +202,28 @@
 
         $sb_who.click(changeName);
 
+        $sb_ta.keydown(function(e) {
+            if(e.keyCode == 13) {
+                if(is_anon) {
+                    changeName();
+                }
+
+                socket.emit('chat', {'room': hwm_hash, 'msg': jQuery(this).val(), 'who': user});
+                jQuery(this).val("");
+
+                return false;
+            }
+        });
+
+
         var $li = jQuery('<li>', {'text': 'Huluwithme is still in early beta. Please report absolutely any problems you find to gkoberger@gmail.com', 'class': 'beta'});
         $sb_ul.append($li);
-
-        // TODO: Refreshing should take us back to the show
-        unsafeWindow.location.hash = "hwm-" + hwm_hash;
-
-        connectionSuccessful();
-
-        function connectionSuccessful() {
-            jQuery('body').prepend($sidebar);
-            $sidebar.append($sb_in);
-            $sb_in.append($sb_out);
-            $sb_out.append($sb_ul);
-            $sidebar.append($sb_ta);
-
-            jQuery('#sidebar textarea').keydown(function(e) {
-                if(e.keyCode == 13) {
-                    if(is_anon) {
-                        changeName();
-                    }
-
-                    socket.emit('chat', {'room': hwm_hash, 'msg': jQuery(this).val(), 'who': user});
-                    jQuery(this).val("");
-
-
-                    return false;
-                }
-            });
-
-            // Disable popout
-            jQuery('#description-contents img').each(function() {
-                if(jQuery(this).attr('src').match('popout')) {
-                    jQuery(this).closest('a').attr('onclick', 'asdf').click(function() {
-                        alert("Sorry, the popout player doesn't work with Huluwithme");
-                        return false;
-                    });
-                    return false;
-                }
-            });
-
-            // Stop right there!
-            unsafeWindow.onbeforeunload = function() {
-                if(hwm_hash_current) {
-                    var text = "Leaving this page will end your Huluwithme session. You'll have to start over if you want to keep watching.";
-                    if(jQuery.browser.mozilla) {
-                        alert(text);
-                        return false;
-                    } else {
-                        return text;
-                    }
-                }
-            };
-
-        }
     }
 
     function cl(m) {
         var $li = jQuery('<li>', {'text': m, 'class': 'event'});
-        jQuery('#sidebar-ul').append($li);
-        jQuery('#sidebar-out').scrollTop(1000000);
+        $sb_ul.append($li);
+        $sb_out.scrollTop(1000000);
     }
 
     function is_user(who) {
@@ -320,8 +292,8 @@
         $li.append($strong);
         $li.append($span);
 
-        jQuery('#sidebar-ul').append($li);
-        jQuery('#sidebar-out').scrollTop(1000000);
+        $sb_ul.append($li);
+        $sb_out.scrollTop(1000000);
 
         if(who['id'] != user['id'] && ! jQuery(document.activeElement).is('#sidebar textarea:focus')) {
             postMessage({'type': 'notify', 'event': 'chat', 'title': who['name'] + ' said:', 'msg': m});
@@ -344,7 +316,7 @@
     }
 
     function getPlayerTime() {
-        if(!player) return 0;
+        if(!player.getCurrentTime) return 0;
         return player.getCurrentTime() / 1000;
     }
 
@@ -401,8 +373,13 @@
         });
 
         socket.on('join_status', function(data) {
+            console.log("Got join status!");
             if(data.result) {
                 emit_event(ad_status);
+                console.log("Connected!");
+                if(hwm_hash_current) {
+                    connectionSuccessful();
+                }
                 cl('You joined the video');
             } else {
                 alert("Uh oh, we couldn't let you join the Huluwithme room you were invited to.\n\n" + data.reason + "\n\nYou can still watch the video, though!");
@@ -438,6 +415,8 @@
                 cl(data.who['name'] + ' joined');
 
                 close_modal();
+                connectionSuccessful();
+
                 player.playVideo(true); // This seems to play from the begining?
 
                 // We need this for logged in users
@@ -493,6 +472,41 @@
         });
     }
 
+    function connectionSuccessful() {
+        if(connected) return;
+
+        connected = true;
+        $sidebar.show();
+
+        // Disable popout
+        jQuery('#description-contents img').each(function() {
+            if(jQuery(this).attr('src').match('popout')) {
+                jQuery(this).closest('a').attr('onclick', '').click(function() {
+                    alert("Sorry, the popout player doesn't work with Huluwithme");
+                    return false;
+                });
+                return false;
+            }
+        });
+
+        // Add hash
+        // TODO: Refreshing should take us back to the show
+        unsafeWindow.location.hash = "hwm-" + hwm_hash;
+
+        // Stop right there!
+        unsafeWindow.onbeforeunload = function() {
+            if(hwm_hash_current) {
+                var text = "Leaving this page will end your Huluwithme session. You'll have to start over if you want to keep watching.";
+                if(jQuery.browser.mozilla) {
+                    alert(text);
+                    return false;
+                } else {
+                    return text;
+                }
+            }
+        };
+
+    }
     function Player2() {
         this.pauseEverything = function() {
             if(player.pauseEverything) {
