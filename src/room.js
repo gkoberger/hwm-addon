@@ -80,6 +80,7 @@ function setupHWM() {
         $tab_span = jQuery('<span>'),
         $tab_desc = jQuery('<div>', {'class': 'hwm-tab-desc link-description', 'html': '<strong>hulu</strong>withme'});
 
+
     jQuery('#description-switch').append($tab_a);
     $tab_a.append($tab_div);
     $tab_div.append($tab_span);
@@ -174,7 +175,9 @@ function checkForConnection() {
             $sb_in = jQuery('<div>', {'id': 'sidebar-in'}),
             $sb_out = jQuery('<div>', {'id': 'sidebar-out'}),
             $sb_ul = jQuery('<ul>', {'id': 'sidebar-ul'}),
-            $sb_ta = jQuery('<textarea>', {'placeholder': 'Type here to chat while you watch! Hit <enter> to send.', 'css': {'border': '0 none', 'border-top': '1px solid #ccc'}});
+            $sb_ta = jQuery('<textarea>', {'placeholder': 'Type here to chat while you watch! Hit <enter> to send.', 'css': {'border': '0 none', 'border-top': '1px solid #ccc'}}),
+            $sb_who = jQuery('<a>', {'href': '#', 'id': 'chat-who', 'text': 'You are ', 'title': 'Edit name'}),
+            $sb_name = jQuery('<strong>', {'id': 'chat-name', 'text': user['name']});
 
         var $ch = jQuery('<div>', {'id': 'chat-head'}),
             $ch_strong = jQuery('<strong>', {'text': 'hulu'})
@@ -182,7 +185,10 @@ function checkForConnection() {
 
         $ch.append($ch_strong).append($ch_rest);
         $sidebar.append($ch);
+        $sidebar.append($sb_who);
+        $sb_who.append($sb_name);
 
+        $sb_who.click(changeName);
 
         var $li = jQuery('<li>', {'text': 'Huluwithme is still in early beta. Please report absolutely any problems you find to gkoberger@gmail.com', 'class': 'beta'});
         $sb_ul.append($li);
@@ -217,13 +223,7 @@ function checkForConnection() {
                 jQuery('#sidebar textarea').keydown(function(e) {
                     if(e.keyCode == 13) {
                         if(is_anon) {
-                            var new_name = prompt("What do you want to use as a username?", user['name']);
-                            if(new_name) {
-                                emit_event('name_change', {'old': user['name'], 'new': new_name});
-                                user['name'] = new_name;
-                                unsafeWindow.localStorage['hwm-name'] = new_name;
-                            }
-                            is_anon = false;
+                            changeName();
                         }
 
                         socket.emit('chat', {'room': hwm_hash, 'msg': jQuery(this).val(), 'who': user});
@@ -423,6 +423,18 @@ function emit_event(status, stuff) {
 function getPlayerTime() {
     if(!player) return 0;
     return player.getCurrentTime() / 1000;
+}
+
+function changeName() {
+    var new_name = prompt("What do you want to use as a username?", user['name']);
+    if(new_name) {
+        emit_event('name_change', {'old': user['name'], 'new': new_name});
+        user['name'] = new_name;
+        unsafeWindow.localStorage['hwm-name'] = new_name;
+        jQuery('#chat-name').text(new_name);
+    }
+    is_anon = false;
+    return false;
 }
 
 function randomString() {

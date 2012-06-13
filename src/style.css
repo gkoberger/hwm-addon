@@ -111,7 +111,7 @@
     height: 100%;
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
-    padding: 53px 0px 70px 10px !important;
+    padding: 69px 0px 70px 10px !important;
 }
 #sidebar-out {
     height: 100%;
@@ -122,7 +122,7 @@
     padding: 0pt !important;
 }
 #sidebar-ul {
-       padding: 0 10px 0 0 !important;
+       padding: 10px 10px 0 0 !important;
        margin: 0 !important;
 }
 #sidebar-ul .event {
@@ -187,6 +187,29 @@
 
 #chat-head strong {
     color: #69B521;
+}
+
+#chat-who {
+    display: block;
+    text-decoration: none;
+    font-weight: normal;
+    position: absolute;
+    border: 10px !important;
+    top: 43px;
+    background-color: #DDD;
+    width: 100%;
+    color: #333;
+    text-align: left;
+    padding: 5px 12px !important;
+    font-size: 0.9em !important;
+    border-bottom: 1px solid #CCC !important;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    height: 26px;
+}
+
+#chat-who:hover {
+    background-color: #C3C3C3;
 }
 
 #sidebar-ul .beta {
