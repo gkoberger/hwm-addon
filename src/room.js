@@ -91,7 +91,7 @@
 
         $tab_a.click(function(e) {
             e.preventDefault();
-            if(hwm_hash_current) {
+            if(connected) {
                 alert('Huluwithme is already running!');
                 return;
             }
