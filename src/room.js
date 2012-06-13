@@ -384,6 +384,9 @@
                 cl('You joined the video');
             } else {
                 alert("Uh oh, we couldn't let you join the Huluwithme room you were invited to.\n\n" + data.reason + "\n\nYou can still watch the video, though!");
+                socket.disconnect();
+                socket = false;
+                connection = false;
             }
         });
 
@@ -446,6 +449,7 @@
             if(data.type == "disconnect") {
                 if(started) {
                     alert('The other person disconnected! You can continue watching, but you are no longer synced.');
+                    socket.disconnect();
                     socket = false; // Don't think this does anything...
 
                     connected = false;
