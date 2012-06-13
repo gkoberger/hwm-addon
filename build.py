@@ -21,6 +21,14 @@ def main():
     # Firefox specific
     shutil.copyfile('src/package.json', 'firefox/package.json')
 
+    if os.path.exists('firefox/data/imgs'):
+        shutil.rmtree('firefox/data/imgs')
+    shutil.copytree('src/imgs', 'firefox/data/imgs')
+
+    if os.path.exists('chrome/imgs'):
+        shutil.rmtree('chrome/imgs')
+    shutil.copytree('src/imgs', 'chrome/imgs')
+
     build_fx()
 
 def build_fx():

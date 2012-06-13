@@ -46,17 +46,21 @@ function showNotification(message) {
     var n = {
         title: message.title,
         text: message.msg,
-        iconURL: data.url(icon)
+        iconURL: data.url('imgs/' + icon)
     };
     notifications.notify(n);
     /* ENDFIREFOX */
 
     /* STARTCHROME */
+    console.log("NOTIFICATION");
     var notification = webkitNotifications.createNotification(
-        icon,  // icon url - can be relative
+        'imgs/' + icon,  // icon url - can be relative
         message.title,  // notification title
         message.msg  // notification body text
     );
+
+    console.log(chrome.extension.getURL('imgs/' + icon));
+
     notification.show();
     setTimeout(function() {
         notification.cancel();
