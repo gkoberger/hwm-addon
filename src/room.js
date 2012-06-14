@@ -8,6 +8,7 @@
         in_commercial = false,
         in_ad_pool = 0,
         socket = false,
+        winchrome = false,
         started = false,
         is_paused = false,
         $commercial, $commerical_overlay, pause, status_text, status_action, status_type,
@@ -27,6 +28,9 @@
     $.noConflict();
 
     /* STARTCHROME */
+    winchrome = navigator.appVersion.indexOf("Win")!=-1;
+    alert('winchrome!');
+
     var sendUp = document.createEvent('Event');
     sendUp.initEvent('sendUp', true, true);
 
@@ -41,7 +45,6 @@
     /* ENDCHROME */
 
     /* STARTFIREFOX */
-
     self.on('message', function(r) {
         if(r.type == "event") {
             jQuery('body').trigger('status_change', [r.action, r.additional]);
@@ -118,6 +121,10 @@
             $hwm_new_close.click(close_modal);
             $hwm_new_overlay.click(close_modal);
 
+            if(winchrome) {
+                jQuery('#player').attr('visibility', 'hidden');
+            }
+
             player2.pauseEverything();
 
             startHWM();
@@ -146,6 +153,7 @@
                 if(ad_status == "end_ad" && other_in_ad) {
                     $commercial.show();
                     $commercial_overlay.show();
+                    if(winchrome) jQuery('#player').attr('visibility', 'hidden');
                     player.pauseEverything();
                     notify('commercial', user_other);
                 }
@@ -346,6 +354,8 @@
             player.seekAndPause(data.time);
             $commercial.show();
             $commercial_overlay.show();
+            if(winchrome) jQuery('#player').attr('visibility', 'hidden');
+
             notify('commercial', data.who)
         } else {
             setTimeout(function() { watchForAd(data); }, 1000);
@@ -366,6 +376,7 @@
     function close_modal() {
         $hwm_new_overlay.remove();
         $hwm_new_modal.remove();
+        if(winchrome) jQuery('#player').attr('visibility', 'visible');
         return false;
     }
 
@@ -422,7 +433,15 @@
                 close_modal();
                 connectionSuccessful();
 
-                player.playVideo(true); // This seems to play from the begining?
+
+                if(winchrome) {
+                    // Swap them out so we can add a new attribute. Hacky...
+                    var jq_player = jQuery('#player').attr('wmode', 'transparent');
+                    embedHTML = jq_player[0].outerHTML;
+                    jq_player.replaceWith(jQuery(embedHTML));
+                } else {
+                    player.playVideo(true); // This seems to play from the begining?
+                }
 
                 // We need this for logged in users
                 var play_count = 0;
@@ -460,6 +479,7 @@
                     jQuery('body').removeClass('hwm');
                     $commercial.remove();
                     $commercial_overlay.remove();
+                    if(winchrome) jQuery('#player').attr('visibility', 'visible');
 
                     jQuery('.toggle-w-hwm').removeClass('on');
 
@@ -478,6 +498,8 @@
                 other_in_ad = false;
                 $commercial.hide();
                 $commercial_overlay.hide();
+                if(winchrome) jQuery('#player').attr('visibility', 'visible');
+
                 if(ad_status == "end_ad") {
                     player.seekAndPlay(data.time);
                 }
