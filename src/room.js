@@ -121,7 +121,7 @@
             $hwm_new_overlay.click(close_modal);
 
             if(winchrome) {
-                jQuery('#player').attr('visibility', 'hidden');
+                jQuery('#player').css('visibility', 'hidden');
             }
 
             player2.pauseEverything();
@@ -156,7 +156,7 @@
                 if(ad_status == "end_ad" && other_in_ad) {
                     $commercial.show();
                     $commercial_overlay.show();
-                    if(winchrome) jQuery('#player').attr('visibility', 'hidden');
+                    if(winchrome) jQuery('#player').css('visibility', 'hidden');
                     player.pauseEverything();
                     notify('commercial', user_other);
                 }
@@ -357,7 +357,7 @@
             player.seekAndPause(data.time);
             $commercial.show();
             $commercial_overlay.show();
-            if(winchrome) jQuery('#player').attr('visibility', 'hidden');
+            if(winchrome) jQuery('#player').css('visibility', 'hidden');
 
             notify('commercial', data.who)
         } else {
@@ -379,7 +379,7 @@
     function close_modal() {
         $hwm_new_overlay.remove();
         $hwm_new_modal.remove();
-        if(winchrome) jQuery('#player').attr('visibility', 'visible');
+        if(winchrome) jQuery('#player').css('visibility', 'visible');
         return false;
     }
 
@@ -436,28 +436,6 @@
                 close_modal();
                 connectionSuccessful();
 
-
-                if(winchrome) {
-                    // Swap them out so we can add a new attribute. Hacky...
-                    var jq_player = jQuery('#player').attr('wmode', 'transparent');
-                    embedHTML = jq_player[0].outerHTML;
-                    jq_player.replaceWith(jQuery(embedHTML));
-                } else {
-                    player.playVideo(true); // This seems to play from the begining?
-                }
-
-                // We need this for logged in users
-                var play_count = 0;
-                var play_interval = setInterval(function() {
-                    if(other_in_ad ? player.seekAndPause(0) : player.seekAndPlay(0)) {
-                        clearInterval(play_interval);
-                        emit_event(ad_status);
-                    }
-                    if(play_count > 5) clearInterval(play_interval);
-                    play_count++;
-                }, 1000);
-                postMessage({'type': 'reset'});
-
                 // Send commercial information to other person.
                 emit_event(ad_status);
                 started = true;
@@ -482,7 +460,7 @@
                     jQuery('body').removeClass('hwm');
                     $commercial.remove();
                     $commercial_overlay.remove();
-                    if(winchrome) jQuery('#player').attr('visibility', 'visible');
+                    if(winchrome) jQuery('#player').css('visibility', 'visible');
 
                     jQuery('.toggle-w-hwm').removeClass('on');
 
@@ -501,7 +479,7 @@
                 other_in_ad = false;
                 $commercial.hide();
                 $commercial_overlay.hide();
-                if(winchrome) jQuery('#player').attr('visibility', 'visible');
+                if(winchrome) jQuery('#player').css('visibility', 'visible');
 
                 if(ad_status == "end_ad") {
                     player.seekAndPlay(data.time);
@@ -512,6 +490,8 @@
 
     function connectionSuccessful() {
         if(connected) return;
+
+        restartVideo();
 
         connected = true;
         $sidebar.show();
@@ -559,4 +539,28 @@
         }
     }
     var player2 = new Player2();
+
+    function restartVideo() {
+        if(winchrome) {
+            // Swap them out so we can add a new attribute. Hacky...
+            var jq_player = jQuery('#player').attr('wmode', 'transparent');
+            embedHTML = jq_player[0].outerHTML;
+            jq_player.replaceWith(jQuery(embedHTML));
+            player = $('player');
+        } else {
+            player.playVideo(true); // This seems to play from the begining?
+        }
+
+        // We need this for logged in users
+        var play_count = 0;
+        var play_interval = setInterval(function() {
+            if(other_in_ad ? player.seekAndPause(0) : player.seekAndPlay(0)) {
+                clearInterval(play_interval);
+                emit_event(ad_status);
+            }
+            if(play_count > 5) clearInterval(play_interval);
+            play_count++;
+        }, 1000);
+        postMessage({'type': 'reset'});
+    }
 })();
