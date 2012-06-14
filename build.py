@@ -30,6 +30,14 @@ def main():
     shutil.copytree('src/imgs', 'hwm-chrome/imgs')
 
     build_fx()
+    build_chrome()
+
+def build_chrome():
+        os.chdir('hwm-chrome/')
+        p = Popen("zip huluwithme_chrome *", shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        p.communicate()
+        os.chdir('..') # back to where we started
+        shutil.move('hwm-chrome/huluwithme_chrome.zip', 'huluwithme_chrome.zip')
 
 def build_fx():
         if os.path.exists('addon-sdk/hwm'):
