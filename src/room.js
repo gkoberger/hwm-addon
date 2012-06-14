@@ -334,7 +334,6 @@
     }
 
     function watchForAd(data) {
-        console.log("Watching for ad...");
         if(ad_status == "start_ad" || !other_in_ad) return;
         var time = getPlayerTime()
         if(time > data.time + 1) { // Give it 1 second leway
@@ -366,18 +365,15 @@
 
     function startSocket() {
         if(socket) return;
-        console.log("STARTING SOCKET!");
-        socket = io.connect('http://huluwithme.herokuapp.com/');
+        socket = io.connect('http://node.huluwith.me/');
 
         socket.on('connect', function() {
             socket.emit('join', {'room': hwm_hash, 'who': user});
         });
 
         socket.on('join_status', function(data) {
-            console.log("Got join status!");
             if(data.result) {
                 emit_event(ad_status);
-                console.log("Connected!");
                 if(hwm_hash_current) {
                     connectionSuccessful();
                 }
@@ -415,7 +411,6 @@
                 notify("seek", data.who, {'old_time': data.old_time, 'new_time': data.new_time});
             }
             if(data.type == "join") {
-                console.log("Other user joined!");
                 cl(data.who['name'] + ' joined');
 
                 close_modal();
@@ -427,7 +422,6 @@
                 var play_count = 0;
                 var play_interval = setInterval(function() {
                     if(other_in_ad ? player.seekAndPause(0) : player.seekAndPlay(0)) {
-                        console.log("In ad?" + other_in_ad);
                         clearInterval(play_interval);
                         emit_event(ad_status);
                     }

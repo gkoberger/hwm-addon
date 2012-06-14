@@ -15,8 +15,8 @@ def main():
     move('style.css', False);
 
     # Chrome specific
-    shutil.copyfile('src/manifest.json', 'chrome/manifest.json')
-    shutil.copyfile('src/room-loader.js', 'chrome/room-loader.js')
+    shutil.copyfile('src/manifest.json', 'hwm-chrome/manifest.json')
+    shutil.copyfile('src/room-loader.js', 'hwm-chrome/room-loader.js')
 
     # Firefox specific
     shutil.copyfile('src/package.json', 'firefox/package.json')
@@ -25,9 +25,9 @@ def main():
         shutil.rmtree('firefox/data/imgs')
     shutil.copytree('src/imgs', 'firefox/data/imgs')
 
-    if os.path.exists('chrome/imgs'):
-        shutil.rmtree('chrome/imgs')
-    shutil.copytree('src/imgs', 'chrome/imgs')
+    if os.path.exists('hwm-chrome/imgs'):
+        shutil.rmtree('hwm-chrome/imgs')
+    shutil.copytree('src/imgs', 'hwm-chrome/imgs')
 
     build_fx()
 
@@ -46,7 +46,7 @@ def move(fn, fix=True):
 
     if(not fix):
         shutil.copyfile('src/%s' % fn,
-                        'chrome/%s' % fn)
+                        'hwm-chrome/%s' % fn)
         shutil.copyfile('src/%s' % fn,
                         'firefox/%s/%s' % (fx, fn))
     else:
@@ -82,7 +82,7 @@ def move(fn, fix=True):
             chrome_fn = 'background.js' if fn == 'main.js' else fn
             if(os.path.exists(chrome_fn)):
                 os.remove(chrome_fn)
-            with open('chrome/%s' % chrome_fn, 'w') as bg:
+            with open('hwm-chrome/%s' % chrome_fn, 'w') as bg:
                 text_ch = ''.join(chrome_lines)
                 bg.write(re.sub('unsafeWindow', 'window', text_ch))
 
