@@ -19,13 +19,20 @@
                 'id': (Math.round(Math.random() * 1000) +"-"+ (new Date().getTime() + "").substr(-5))},
         user_other = {'name': 'The other person', 'id': false};
 
-    var saved_name = window.localStorage.getItem("hwm-name");
+    $.noConflict();
+
+    var saved_name = unsafeWindow.localStorage.getItem("hwm-name");
     if(saved_name) {
         is_anon = false;
         user['name'] = saved_name;
+    } else {
+        var user_hulu = jQuery('#user-greeting').text();
+        if(user_hulu != "User") {
+            user['name'] = user_hulu;
+            unsafeWindow.localStorage['hwm-name'] = user_hulu;
+            is_anon = false;
+        }
     }
-
-    $.noConflict();
 
     /* STARTCHROME */
     winchrome = navigator.appVersion.indexOf("Win")!=-1;
