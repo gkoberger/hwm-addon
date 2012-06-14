@@ -29,7 +29,6 @@
 
     /* STARTCHROME */
     winchrome = navigator.appVersion.indexOf("Win")!=-1;
-    alert('winchrome!');
 
     var sendUp = document.createEvent('Event');
     sendUp.initEvent('sendUp', true, true);
@@ -136,12 +135,16 @@
                 status_send = "play";
                 notify("play", user);
                 if(other_in_ad) {
-                    alert("The other person is still in a commercial.\n\nThe video will play automatically when they're done.");
                     player2.pauseEverything();
+                    alert("The other person is still in a commercial.\n\nThe video will play automatically when they're done.");
+                    status_send = false;
                 }
             } else if (status == "pause" || status == "centerpause") {
                 status_send = "pause";
                 notify("pause", user);
+                if(other_in_ad) {
+                    status_send = false;
+                }
             } else if (status == "seek") {
                 status_send = "seek";
                 additional['old_time'] = getPlayerTime();
