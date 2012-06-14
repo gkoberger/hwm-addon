@@ -38,7 +38,7 @@ def main():
 
 def build_chrome():
         os.chdir('hwm-chrome/')
-        p = Popen("zip huluwithme_chrome *", shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        p = Popen("zip -r huluwithme_chrome *", shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         p.communicate()
         os.chdir('..') # back to where we started
         shutil.move('hwm-chrome/huluwithme_chrome.zip', 'huluwithme_chrome.zip')

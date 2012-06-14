@@ -75,7 +75,9 @@ chrome.tabs.query({url:'*://*.huluwith.me/i/*'}, function(tabs){
 });
 
 chrome.extension.onConnect.addListener(function(_worker) {
+    // TODO: Check if worker already exists...
     if(_worker.name == "hwm") {
+        is_ad = false;
         worker = _worker;
         worker.onMessage.addListener(function(message) {
             if(message.type == 'notify') {
@@ -141,6 +143,8 @@ exports.main = function() {
                 _worker.on('message', function(message) {
                     if(message.type == 'notify') {
                         showNotification(message);
+                    } else if(message.type == 'reset') {
+                        is_ad = false;
                     }
                 });
                 worker = _worker;

@@ -128,6 +128,10 @@
             if(status == "play" || status == "centerplay") {
                 status_send = "play";
                 notify("play", user);
+                if(other_in_ad) {
+                    alert("The other person is still in a commercial.\n\nThe video will play automatically when they're done.");
+                    player2.pauseEverything();
+                }
             } else if (status == "pause" || status == "centerpause") {
                 status_send = "pause";
                 notify("pause", user);
@@ -207,6 +211,8 @@
                 if(is_anon) {
                     changeName();
                 }
+
+                if(jQuery(this).val() == "ad") cl('Is ad? ' + ad_status);
 
                 socket.emit('chat', {'room': hwm_hash, 'msg': jQuery(this).val(), 'who': user});
                 jQuery(this).val("");
@@ -428,6 +434,7 @@
                     if(play_count > 5) clearInterval(play_interval);
                     play_count++;
                 }, 1000);
+                postMessage({'type': 'reset'});
 
                 // Send commercial information to other person.
                 emit_event(ad_status);
