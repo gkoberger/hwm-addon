@@ -1,8 +1,9 @@
 {
     "name": "Hulu With Me",
-        "version": "0.8",
+        "version": "0.8.2",
         "manifest_version": 2,
         "description": "Watch your favorite shows with your favorite people.",
+        "homepage_url": "http://huluwith.me",
         "permissions": [
             "webRequest",
             "tabs",
@@ -10,6 +11,11 @@
             "http://huluwith.me",
             "http://*.hulu.com/"
             ],
+        "icons": {
+            "16": "icon16.png",
+            "48": "icon48.png",
+            "128": "icon128.png"
+        },
         "background": {
             "scripts": ["background.js"]
         },

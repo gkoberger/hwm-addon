@@ -112,7 +112,7 @@
             $hwm_new_modal.append(jQuery('<p>', {'text': 'Watch your favorite show with your favorite person'}));
             $hwm_new_modal.append(jQuery('<label>', {'text': 'Send this link to the person you want to watch with:'}));
             $hwm_new_modal.append($hwm_new_input);
-            $hwm_new_modal.append(jQuery('<p>', {'text': 'Your video will start automatically from the beginning when they click the link.'}));
+            $hwm_new_modal.append(jQuery('<p>', {'text': 'Your video will start automatically from the beginning when they click the link. We\'ll help them get started if they don\'t have the add-on installed yet.'}));
             $hwm_new_modal.append($hwm_new_close);
 
             $hwm_new_close.click(close_modal);
@@ -324,7 +324,7 @@
         var new_name = prompt("What do you want to use as a username?", user['name']);
         if(new_name && new_name != user['name']) {
             emit_event('name_change', {'old': user['name'], 'new': new_name});
-            cl("You are now known as " + data.new)
+            cl("You are now known as " + new_name);
             user['name'] = new_name;
             unsafeWindow.localStorage['hwm-name'] = new_name;
             jQuery('#chat-name').text(new_name);
@@ -365,7 +365,7 @@
 
     function startSocket() {
         if(socket) return;
-        socket = io.connect('http://node.huluwith.me/');
+        socket = io.connect('http://huluwithme.herokuapp.com/');
 
         socket.on('connect', function() {
             socket.emit('join', {'room': hwm_hash, 'who': user});
@@ -438,7 +438,7 @@
                 started = true;
             }
             if(data.type == "name_change") {
-                cl(data.old + " is now known as " + data.new)
+                cl(data.old + " is now known as " + data.new);
             }
             if(data.type == "disconnect") {
                 if(started) {
@@ -450,6 +450,7 @@
 
                     player.pauseEverything();
                     $sidebar.remove();
+                    jQuery('body').removeClass('hwm');
                     $commercial.remove();
                     $commercial_overlay.remove();
 
@@ -482,6 +483,7 @@
 
         connected = true;
         $sidebar.show();
+        jQuery('body').addClass('hwm');
 
         // Disable popout
         jQuery('#description-contents img').each(function() {

@@ -222,3 +222,18 @@
     margin-bottom: 5px !important;
     padding: 7px !important;
 }
+
+body.hwm {
+    margin-right: 200px !important;
+}
+
+body.hwm #player-container:after {
+    display: block;
+    width: 200px;
+    height: 1px;
+    content: " ";
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    margin-right: -200px;
+}

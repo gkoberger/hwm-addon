@@ -14,6 +14,10 @@ def main():
     move('jquery.js', False);
     move('style.css', False);
 
+    move('icon16.png', False);
+    move('icon48.png', False);
+    move('icon128.png', False);
+
     # Chrome specific
     shutil.copyfile('src/manifest.json', 'hwm-chrome/manifest.json')
     shutil.copyfile('src/room-loader.js', 'hwm-chrome/room-loader.js')
