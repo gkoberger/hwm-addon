@@ -3,7 +3,7 @@
         hwm_hash_current = location.hash.match(/#hwm-([\w]*)/),
         random_hash = randomString(),
         hwm_hash = (hwm_hash_current) ? hwm_hash_current[1] : random_hash,
-        hwm_link = "http://huluwith.me/i/" + hwm_hash + "-" + hulu_show_id,
+        hwm_link = "http://huluwith.me/" + hwm_hash + "-" + hulu_show_id,
         player = false,
         in_commercial = false,
         in_ad_pool = 0,
@@ -523,6 +523,11 @@
         unsafeWindow.onbeforeunload = function() {
             if(connected) {
                 return "Leaving this page will end your Huluwithme session. You'll have to start over if you want to keep watching.";
+            }
+        };
+        unsafeWindow.onunload = function() {
+            if(socket) {
+                socket.disconnect();
             }
         };
 
