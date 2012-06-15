@@ -392,7 +392,7 @@
 
     function startSocket() {
         if(socket) return;
-        socket = io.connect('http://huluwithme.herokuapp.com/');
+        socket = io.connect('http://hulu.watchalongwithme.com');
 
         socket.on('connect', function() {
             socket.emit('join', {'room': hwm_hash, 'who': user});

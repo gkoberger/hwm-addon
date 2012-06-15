@@ -68,9 +68,11 @@ function showNotification(message) {
 /* STARTCHROME */
 
 /* Refresh tab when add-on is installed */
-chrome.tabs.query({url:'*://*.huluwith.me/i/*'}, function(tabs){
+chrome.tabs.query({url:'*://*.huluwith.me/*'}, function(tabs){
     for(var i = 0; i < tabs.length; i++) {
-        chrome.tabs.reload(tabs[i].id);
+        if(tabs[i].url.match(/huluwith.me\/[a-zA-Z0-9]{5}/)) {
+            chrome.tabs.reload(tabs[i].id);
+        }
     }
 });
 
@@ -115,10 +117,10 @@ exports.main = function() {
 
     /* Refresh tab when add-on is installed */
     for each (var tab in tabs) {
-        if(tab.url.match(/huluwith.me\/i\//)) {
+        if(tab.url.match(/huluwith.me/)) {
             tab.attach({
               contentScript:
-                'location.href="'+tab.url.replace(/install\//, "")+'"'
+                'unsafeWindow.installSuccess();'
             });
         }
     }
