@@ -533,17 +533,44 @@
 
     }
     function Player2() {
-        this.pauseEverything = function() {
-            if(player.pauseEverything) {
-                player.pauseEverything();
-            } else {
+        this.pauseEverything = function(args, callback, limit) {
+            this.retry(this._pauseEverything, args, callback, limit);
+        }
+        this._pauseEverything = function() {
+            if(!player.pauseEverything) return false;
+            player.pauseEverything();
+            return true;
+        }
+
+        this.playVideo = function(args, callback, limit) {
+            this.retry(this._playVideo, args, callback, limit);
+        }
+        this._playVideo = function(arg) {
+            if(!player.playVideo) return false;
+            player.playVideo(arg);
+            return true;
+        }
+
+        this.seekAndPlay = function(args, callback, limit) {
+            this.retry(this._seekAndPlay, args, callback, limit);
+        }
+        this._seekAndPlay = function(time) {
+            if(!player.seekAndPlay) return false;
+            player.seekAndPlay(time);
+            return true;
+        }
+
+        this.retry = function(to_retry, args, callback, limit) {
+            if(!limit) limit = 5;
+            if(!to_retry.apply(this, args)) {
                 (function() {
-                    var limit = 3;
-                    var pause_interval = setInterval(function() {
+                    var retry_interval = setInterval(function() {
                         limit--;
-                        if(limit <= 0) clearInterval(pause_interval);
-                        if(player.pauseEverything) {
-                            player.pauseEverything();
+                        if(to_retry.apply(this, args) || limit <= 0) {
+                            clearInterval(retry_interval);
+                            if(callback) {
+                                callback.apply(this);
+                            }
                         }
                     }, 500);
                 })();
@@ -559,20 +586,19 @@
             embedHTML = jq_player[0].outerHTML;
             jq_player.replaceWith(jQuery(embedHTML));
             player = $('player');
+            player2.seekAndPlay([0], function() {
+                emit_event(ad_status);
+            }, 10);
         } else {
-            player.playVideo(true); // This seems to play from the begining?
+            // We need this for logged in users
+            // This seems to play from the begining?
+            player2.playVideo([true], function() {
+                player2.seekAndPlay([0], function() {
+                    emit_event(ad_status);
+                });
+            }, 15);
         }
 
-        // We need this for logged in users
-        var play_count = 0;
-        var play_interval = setInterval(function() {
-            if(other_in_ad ? player.seekAndPause(0) : player.seekAndPlay(0)) {
-                clearInterval(play_interval);
-                emit_event(ad_status);
-            }
-            if(play_count > 5) clearInterval(play_interval);
-            play_count++;
-        }, 1000);
         postMessage({'type': 'reset'});
     }
 })();
