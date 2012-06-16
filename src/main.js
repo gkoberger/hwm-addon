@@ -32,7 +32,7 @@ function checkURL(url) {
             send("seek", {'new_time': new_time[1] / 1000});
         }
 
-        if(match[2] == "pause" || match[2] == "centerpause" || match[2] == "play" || match[2] == "centerplay") {
+        if(match[1] == "contentinteraction" && (match[2] == "pause" || match[2] == "centerpause" || match[2] == "play" || match[2] == "centerplay")) {
             send(match[2]);
         }
     }
