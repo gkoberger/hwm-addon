@@ -15,7 +15,6 @@ function send(msg, additional) {
 function checkURL(url) {
     var match = url.match('(contentinteraction|revenue|playback|potentialbugtracking)/([a-zA-Z]*)');
 
-        console.log(url);
     if(match) {
         var is_ad_new = is_ad;
         if(match[2] == "request") is_ad_new = true;
@@ -23,11 +22,8 @@ function checkURL(url) {
         if(match[1] == "playback" && match[2] == "start") is_ad_new = false;
         if(match[1] == "potentialbugtracking" && match[2] == "contentplaybackresume") is_ad_new = false;
 
-        //if(is_ad_new != is_ad) {
-            //console.log('changing ad to ' + is_ad_new);
-            is_ad = is_ad_new;
-            send(is_ad ? 'start_ad' : 'end_ad');
-        //}
+        is_ad = is_ad_new;
+        send(is_ad ? 'start_ad' : 'end_ad');
 
         if(match[2] == "seek") {
             var new_time = url.match('selectedposition=([0-9]*)&');
