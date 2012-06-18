@@ -6,6 +6,7 @@
         hwm_link = "http://huluwith.me/" + hwm_hash + "-" + hulu_show_id,
         player = false,
         in_commercial = false,
+        allow_adchange = false,
         in_ad_pool = 0,
         socket = false,
         winchrome = false,
@@ -17,11 +18,14 @@
         connected = false, // Don't rerun connectionSuccessful
         user = {'name': "Anon " + Math.round(Math.random() * 1000),
                 'id': (Math.round(Math.random() * 1000) +"-"+ (new Date().getTime() + "").substr(-5))},
-        user_other = {'name': 'The other person', 'id': false};
+        user_other = {'name': 'The other person', 'id': false},
+        ad_status = "end_ad",
+        other_in_ad = false;
 
-    //$.noConflict();
 
-    var saved_name = unsafeWindow.localStorage.getItem("hwm-name");
+    $.noConflict();
+
+    var saved_name = window.localStorage.getItem("hwm-name");
     if(saved_name) {
         is_anon = false;
         user['name'] = saved_name;
@@ -29,13 +33,14 @@
         var user_hulu = jQuery('#user-greeting').text();
         if(user_hulu != "User") {
             user['name'] = user_hulu;
-            unsafeWindow.localStorage['hwm-name'] = user_hulu;
+            window.localStorage['hwm-name'] = user_hulu;
             is_anon = false;
         }
     }
 
     /* STARTCHROME */
     winchrome = navigator.appVersion.indexOf("Win")!=-1;
+    /* ENDCHROME */
 
     var sendUp = document.createEvent('Event');
     sendUp.initEvent('sendUp', true, true);
@@ -48,19 +53,6 @@
             jQuery('body').trigger('status_change', [r.action, r.additional]);
         }
     });
-    /* ENDCHROME */
-
-    /* STARTFIREFOX */
-    self.on('message', function(r) {
-        c(126);
-        if(r.type == "event") {
-        c(127);
-            jQuery('body').trigger('status_change', [r.action, r.additional]);
-        c(128);
-        }
-        c(129);
-    });
-    /* ENDFIREFOX */
 
     jQuery(document).ready(function() {
         setupHWM();
@@ -72,23 +64,7 @@
 
     // setup is run instantly, and adds the icons and panels.
     function setupHWM() {
-        /* STARTCHROME */
         player = $('player');
-        /* ENDCHROME */
-        /* STARTFIREFOX */
-        player = unsafeWindow.$('player').wrappedJSObject;
-        var p_s = !!(player.playVideo);
-        var test = setInterval(function() {
-            p_s_new = !!(player.playVideo);
-            console.log('checking.. ', p_s_new);
-            if(p_s != p_s_new && !p_s_new) {
-                console.log('broken');
-                alert('broken');
-                clearInterval(test);
-            }
-            p_s = p_s_new;
-        }, 200);
-        /* ENDFIREFOX */
 
         // Create commercial overlay box
         $commercial = jQuery('<div>', {'id': 'commercial'});
@@ -151,91 +127,55 @@
                 $hwm_new_input[0].select();
             });
 
-            player2.pauseEverything();
+            player2.pauseEverything(false, false, 5);
 
             startHWM();
         });
 
         jQuery('body').bind('status_change', function(e, status, additional) {
-            c(110);
             var status_send = false;
             if(ad_status != "start_ad"  && (status == "play" || status == "centerplay")) {
-            c(111);
                 status_send = "play";
-            c(112);
                 notify("play", user);
-            c(113);
                 if(other_in_ad) {
-            c(114);
                     player2.pauseEverything();
-            c(115);
                     alert("The other person is still in a commercial.\n\nThe video will play automatically when they're done.");
                     status_send = false;
-            c(116);
                 }
             } else if (ad_status != "start_ad"  && (status == "pause" || status == "centerpause")) {
-            c(117);
                 status_send = "pause";
                 notify("pause", user);
-            c(118);
                 if(other_in_ad) {
                     status_send = false;
                 }
-            c(119);
             } else if (status == "seek") {
-            c(120);
                 status_send = "seek";
                 additional['old_time'] = getPlayerTime();
                 notify("seek", user, additional);
-            c(121);
-            } else if (status == "start_ad" || status == "end_ad") {
-            c(122);
+            } else if (allow_adchange && (status == "start_ad" || status == "end_ad")) {
+                console.log("GOT AD STATUS " + status);
                 if(ad_status != status) {
-            c(123);
+                    console.log("CHANGING AD TO " + status, "Other:" + other_in_ad);
                     status_send = status;
                     ad_status = status;
 
-            c(124);
-                    if(ad_status == "end_ad" && other_in_ad) {
-                        $commercial.show();
-                        $commercial_overlay.show();
-            c(125);
-                        jQuery('#player').css('visibility', 'hidden');
-            c(126);
-                        player2.pauseEverything();
-            c(127);
-                        notify('commercial', user_other);
-            c(128);
-                    }
+                    setTimeout(function() { // Give it half a second, just in case things change
+                        if(ad_status == "end_ad" && other_in_ad) {
+                                $commercial.show();
+                                $commercial_overlay.show();
+                                jQuery('#player').css('visibility', 'hidden');
+                                player2.pauseEverything();
+                                notify('commercial', user_other);
+                        }
+                    }, 500);
                 }
             }
 
             if(status_send) {
-                c(101);
                 emit_event(status_send, additional);
             }
         });
     }
-
-    /*
-    function checkForConnection() {
-        postMessage({'type': 'starting!'}); // Just to trigger start_hwm in main.js
-
-        socket = io.connect('http://localhost:8008');
-
-        socket.on('connect', function() {
-            socket.emit('join', {'room': hwm_hash});
-        });
-        socket.on('event', function(data) {
-            if(data.type == "join") {
-                window.location.href = hwm_link;
-            }
-        });
-    }
-    */
-
-    var ad_status = false,
-        other_in_ad = false;
 
     function startHWM() {
         startSocket();
@@ -318,10 +258,15 @@
             msg = "The video will play automatically when they're done.";
         }
         if(event == "seek") {
-            var current_time = additional.old_time;
+            var current_time = getPlayerTime();
             var difference = Math.round(Math.abs(current_time - additional.new_time));
 
-            if(current_time > additional.new_time) {
+            if(difference == 0) {
+                title = "Seeking";
+                msg = name + " skipped around";
+                event = 'seek_forward';
+                symbol = '» ';
+            } else if(current_time > additional.new_time) {
                 title = "Skipping Back";
                 msg = name + " skipped back " + difference + " seconds";
                 event = 'seek_back';
@@ -341,15 +286,8 @@
     }
 
     function postMessage(m) {
-        /* STARTFIREFOX */
-        c(153);
-        self.postMessage(m);
-        c(154);
-        /* ENDFIREFOX */
-        /* STARTCHROME */
         $transport.text(JSON.stringify(m));
         $transport[0].dispatchEvent(sendUp);
-        /* ENDCHROME */
     }
 
     function chat(who, m) {
@@ -369,31 +307,22 @@
     }
 
     function emit_event(status, stuff) {
-        c(50);
         if(!socket) return;
-        c(51);
         if(!stuff) stuff = {};
-        c(52);
         var time = false;
         if(player) {
-        c(53);
             time = getPlayerTime();
         }
-        c(54);
         stuff['type'] = status;
         stuff['room'] = hwm_hash;
         stuff['time'] = time;
         stuff['started'] = started;
         stuff['who'] = user;
-        c(55);
         socket.emit('event', stuff);
-        c(56);
     }
 
     function getPlayerTime() {
-        c("1");
         if(!player.getCurrentTime) return 0;
-        c("2");
         return player.getCurrentTime() / 1000;
     }
 
@@ -403,7 +332,7 @@
             emit_event('name_change', {'old': user['name'], 'new': new_name});
             cl("You are now known as " + new_name);
             user['name'] = new_name;
-            unsafeWindow.localStorage['hwm-name'] = new_name;
+            window.localStorage['hwm-name'] = new_name;
             jQuery('#chat-name').text(new_name);
         }
         is_anon = false;
@@ -411,29 +340,23 @@
     }
 
     function watchForAd(data) {
-        c(58);
         if(ad_status == "start_ad" || !other_in_ad) return;
         var time = getPlayerTime()
-        c(59);
         if(time > data.time + 1) { // Give it 1 second leway
-        c(60);
-            player2.seekAndPause([data.time]);
+            //player2.seekAndPause([data.time]);
+            player2.pauseEverything();
             $commercial.show();
             $commercial_overlay.show();
             jQuery('#player').css('visibility', 'hidden');
 
-        c(61);
             notify('commercial', data.who)
-        c(62);
         } else {
-        c(63);
             setTimeout(function() { watchForAd(data); }, 1000);
-        c(64);
         }
     }
 
     function randomString() {
-        var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
+        var chars = "123456789abcdefghijkmnopqrstuvwxyz";
         var string_length = 5;
         var rs = '';
         for (var i=0; i<string_length; i++) {
@@ -482,8 +405,7 @@
             chat(data.who, data.msg);
         });
 
-        socket.on('event2', function(data) {
-        c(66);
+        socket.on('event', function(data) {
             user_other = data.who;
             if(data.type == "pause") {
                 player2.pauseEverything();
@@ -511,7 +433,6 @@
                 // Send commercial information to other person.
                 //emit_event(ad_status);
                 started = true;
-                c(102);
                 emit_event('started');
             }
             if(data.type == "started") {
@@ -538,12 +459,11 @@
                     jQuery('.toggle-w-hwm').removeClass('on');
 
                     hwm_hash_current = false;
-                    unsafeWindow.location.hash = '';
+                    window.location.hash = '';
                     hwm_hash = randomString();
                 }
             }
             if(data.type == "start_ad") {
-                console.log('Ad break ' + data.who['name']);
                 cl("Ad break");
                 other_in_ad = true;
 
@@ -556,10 +476,11 @@
                 jQuery('#player').css('visibility', 'visible');
 
                 if(ad_status == "end_ad") {
-                    player2.seekAndPlay([data.time]);
+                    setTimeout(function() {
+                        player2.seekAndPlay([data.time]);
+                    }, 500);
                 }
             }
-        c(87);
         });
     }
 
@@ -585,15 +506,15 @@
 
         // Add hash
         // TODO: Refreshing should take us back to the show
-        unsafeWindow.location.hash = "hwm-" + hwm_hash;
+        window.location.hash = "hwm-" + hwm_hash;
 
         // Stop right there!
-        unsafeWindow.onbeforeunload = function() {
+        window.onbeforeunload = function() {
             if(connected) {
                 return "Leaving this page will end your Huluwithme session. You'll have to start over if you want to keep watching.";
             }
         };
-        unsafeWindow.onunload = function() {
+        window.onunload = function() {
             if(socket) {
                 socket.disconnect();
             }
@@ -605,131 +526,90 @@
         this.callback = false;
 
         this.pauseEverything = function(args, callback, limit) {
-            console.log('Firing pauseEverything', !!(player.pauseEverything));
-            c(9);
+            console.log('trying to pauseEverything');
             this.retry(this._pauseEverything, args, callback, limit);
-            c(10);
         }
         this._pauseEverything = function() {
-            c(11);
             if(!player.pauseEverything) return false;
-            c(12);
-            console.log('Pausing!');
             player.pauseEverything();
-            c(18);
+            console.log('pausedEverything');
             return true;
         }
 
         this.playVideo = function(args, callback, limit) {
-            c(13);
-            console.log('Firing playVideo', !!(player.playVideo));
             this.retry(this._playVideo, args, callback, limit);
-            c(14);
         }
         this._playVideo = function(arg) {
-            c(15);
             if(!player.playVideo) return false;
-            c(16);
             player.playVideo(arg);
-            c(17);
             return true;
         }
 
         this.seekAndPause = function(args, callback, limit) {
-            console.log('Firing seekAndPause(' + args[0] + ')');
-            c(19);
+            console.log('trying to seekAndPause(' + args[0] + ')');
             this.retry(this._seekAndPause, args, callback, limit);
-            c(20);
         }
         this._seekAndPause = function(time) {
-            c(21);
             if(!player.seekAndPause) return false;
-            c(22);
             player.seekAndPause(time);
-            c(23);
+            console.log('done seekAndPause(' + time + ')');
             return true;
         }
 
         this.seekAndPlay = function(args, callback, limit) {
-            c(24);
-            console.log('Firing seekAndPlay(' + args[0] + ')', !!(player.seekAndPlay));
+            console.log('trying to seekAndPlay(' + args[0] + ')');
             this.retry(this._seekAndPlay, args, callback, limit);
-            c(25);
         }
         this._seekAndPlay = function(time) {
-            c(26);
             if(!player.seekAndPlay) return false;
-            c(27);
+            console.log('done seekAndPlay(' + time + ')');
             player.seekAndPlay(time);
-            c(28);
             return true;
         }
 
-        this.reset = function(args, callback, limit) {
-            console.log('Clearing interval');
-            c(29);
+        this.reset = function(args, callback) {
             clearInterval(this.retry_interval);
-            c(30);
             if(this.callback) {
                 this.callback();
                 this.callback = false;
-            c(31);
             }
         }
 
         this.retry = function(to_retry, args, callback, limit) {
-            c(32);
-            if(!args) args = [false];
+            if(!args) args = [];
             //if(!limit) limit = 5;
-            c(33);
-            if(!to_retry(args[0]) && limit) {
-            c(34);
-                console.log('couldnt fire; starting interval.');
-                /* STARTCHROME */
-                //player = $('player');
-                /* ENDCHROME */
-                /* STARTFIREFOX */
-                //player = unsafeWindow.$('player').wrappedJSObject;
-                /* ENDFIREFOX */
+            if(!to_retry.apply(this, args) && limit) {
+                player = $('player');
 
                 (function() {
                     if(this.retry_interval) {
-            c(35);
-                        console.log('Clearing interval early');
+                        console.log('resetting');
                         clearInterval(this.retry_interval);
                         if(this.callback) {
                             this.callback();
                         }
-            c(36);
                     }
                     this.callback = callback;
 
                     this.retry_interval = setInterval(function() {
-            c(37);
                         limit--;
-                        console.log('retrying...');
-                        if(to_retry(args[0]) || limit <= 0) {
-                            console.log('finished ' + limit);
+                        console.log('trying again', to_retry);
+                        if(to_retry.apply(this, args) || limit <= 0) {
                             clearInterval(this.retry_interval);
                             if(this.callback) {
                                 this.callback();
                             }
                         }
-            c(38);
                     }, 500);
                 })();
             } else {
                 if(callback) {
-            c(40);
                     callback();
-            c(39);
                 }
             }
         }
     }
-            c(7);
     var player2 = new Player2();
-            c(8);
 
     function restartVideo() {
         player2.reset();
@@ -739,55 +619,18 @@
             embedHTML = jq_player[0].outerHTML;
             jq_player.replaceWith(jQuery(embedHTML));
             player = $('player');
-            if(getPlayerTime() > 0) {
-                player2.seekAndPlay([0], function() {
-                    console.log('emit1');
-                c(103);
-                    emit_event(ad_status);
-                }, 10);
-            }
+            player2.seekAndPlay([0], function() {
+                allow_adchange = true;
+                //emit_event(ad_status);
+            }, 10);
         } else {
             // We need this for logged in users
-            // This seems to play from the begining?
-            console.log('restarting..', (!!player.playVideo));
-            /*
-            c(6);
-            if(getPlayerTime() > 0) {
-                player2.playVideo([true], function() {
-                    player2.seekAndPlay([0], function() {
-                        console.log('done restarting1', (!!player.playVideo));
-                        console.log('emit2');
-                c(104);
-                        emit_event(ad_status);
-                    });
-                }, 15);
-            } else if(ad_status == "start_ad") {
-                /*
-                player2.playVideo([true], function() {
-                    console.log('done restarting2', (!!player.playVideo));
-                    console.log('emit3');
-                    emit_event(ad_status);
-                });
-                */
-               /*
-                c(104);
-                emit_event(ad_status);
-            } else {
-                c(3);
-                console.log('done restarting3', (!!player.playVideo));
-                c(4);
-                emit_event(ad_status);
-                c(5);
-            }
-            */
+            // This seems to play from the begining if in ad?
+            player2.playVideo([true], function() {
+                allow_adchange = true;
+            }, 15);
         }
 
-        c(150);
-        postMessage({'type': 'reset'});
-        c(151);
+        //postMessage({'type': 'reset'});
     }
-
-function c(i) {
-    console.log('c', i, (!!player.playVideo));
-}
 })();

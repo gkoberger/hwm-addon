@@ -13,6 +13,7 @@ class Builder:
     def build(self):
         self.move('main.js');
         self.move('room.js');
+        self.move('room-loader.js');
 
         self.move('check.js', False);
 
@@ -26,10 +27,11 @@ class Builder:
 
         # Chrome specific
         self.move('manifest.json', only='chrome')
-        shutil.copyfile('src/room-loader.js', 'hwm-chrome/room-loader.js')
 
         # Firefox specific
         self.move('package.json', only='firefox')
+        self.move('icon.png', False, only='firefox');
+        self.move('icon64.png', False, only='firefox');
 
         if os.path.exists('firefox/data/imgs'):
             shutil.rmtree('firefox/data/imgs')
@@ -63,6 +65,8 @@ class Builder:
         fx = 'data/'
         fx = 'lib/' if fn == "main.js" else fx
         fx = '' if fn == "package.json" else fx
+        fx = '' if fn == "icon.png" else fx
+        fx = '' if fn == "icon64.png" else fx
 
         if(not fix):
             shutil.copyfile('src/%s' % fn,
@@ -106,7 +110,7 @@ class Builder:
                     with open('hwm-chrome/%s' % chrome_fn, 'w') as bg:
                         text_ch = ''.join(chrome_lines)
                         text_ch = re.sub('{version}', self.version, text_ch)
-                        bg.write(re.sub('unsafeWindow', 'window', text_ch))
+                        bg.write(text_ch)
 
                 # Fx
                 if only != 'chrome':
