@@ -211,6 +211,15 @@
 
         $sb_who.click(changeName);
 
+        /* This probably fixes the problem where flash is swallowing clicks */
+        var $fake_input = jQuery('<input>', {'class':'fake-input'}).appendTo('body');
+        $sb_ta.click(function() {
+            $sb_ta.blur();
+            $fake_input.focus();
+            $sb_ta.focus();
+            $fake_input.val("");
+        });
+
         $sb_ta.keydown(function(e) {
             if(e.keyCode == 13) {
                 if(is_anon) {

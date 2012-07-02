@@ -240,3 +240,15 @@ body.hwm #container:after {
     top: 0px;
     margin-right: -210px;
 }
+
+.fake-input {
+    background-color: transparent;
+    border: 0 none;
+    height: 1px;
+    left: 0;
+    opacity: 0.01;
+    position: fixed;
+    top: 0;
+    width: 1px;
+    z-index: 1000;
+}
