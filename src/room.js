@@ -236,7 +236,7 @@
         });
 
 
-        var $li = jQuery('<li>', {'text': 'Huluwithme is still in early beta. Please report absolutely any problems you find to gkoberger@gmail.com', 'class': 'beta'});
+        var $li = jQuery('<li>', {'html': 'Huluwithme is still in early beta. <a href="mailto:gkoberger@gmail.com" target="_blank">Please report</a> absolutely any problems you find.', 'class': 'beta'});
         $sb_ul.append($li);
     }
 
