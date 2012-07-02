@@ -9,6 +9,7 @@
         socket = false,
         winchrome = false,
         window_focus = true,
+        gotten_response = false, // Changed once we get any player data
         started = false,
         is_paused = false,
         $commercial, $commerical_overlay, pause, status_text, status_action, status_type,
@@ -58,6 +59,7 @@
         var r = JSON.parse(jQuery(this).text());
         if(r.type == "event") {
             jQuery('body').trigger('status_change', [r.action, r.additional]);
+            gotten_response = true;
         }
     });
 
@@ -115,10 +117,35 @@
             var $hwm_new_input = jQuery('<input>', {'value': hwm_link});
             var $hwm_new_close = jQuery('<a>', {'text': 'cancel', 'class': 'close', 'href': '#'});
 
+            var $hwm_pg1 = jQuery('<div>', {'class':'page_1'});
+            var $hwm_pg2 = jQuery('<div>', {'class':'page_2'});
+
+            var $hwm_next = jQuery('<button>', {'text': 'Next >'});
+            $hwm_next.click(function(e) {
+                e.preventDefault();
+                $hwm_new_modal.addClass('next');
+                player.pauseEverything();
+            });
+
             $hwm_new_modal.append(jQuery('<div>', {'id': 'hwm-logo'}));
             $hwm_new_modal.append(jQuery('<p>', {'text': 'Watch your favorite show with your favorite person'}));
-            $hwm_new_modal.append(jQuery('<label>', {'text': 'Send this link to the person you want to watch with:'}));
-            $hwm_new_modal.append($hwm_new_input);
+            $hwm_pg1.append(jQuery('<label>', {'text': 'Send this link to the person you want to watch with:'}));
+            $hwm_pg1.append($hwm_next);
+            $hwm_pg1.append($hwm_new_input);
+
+            var $hwm_pg2_back = jQuery('<a>', {'text': 'Need the URL again?', 'href': '#'});
+            $hwm_pg2_back.click(function(e) {
+                e.preventDefault();
+                $hwm_new_modal.removeClass('next');
+            });
+
+            $hwm_pg2.append(jQuery('<label>', {'text': 'Waiting for the other person to join...'}));
+            $hwm_pg2.append($hwm_pg2_back);
+            $hwm_pg2.append(jQuery('<div>', {'class': 'load'}));
+
+            $hwm_new_modal.append($hwm_pg1);
+            $hwm_new_modal.append($hwm_pg2);
+
             $hwm_new_modal.append(jQuery('<p>', {'text': 'Your video will start automatically from the beginning when they click the link. We\'ll help them get started if they don\'t have the add-on installed yet.'}));
             $hwm_new_modal.append($hwm_new_close);
 
@@ -610,6 +637,13 @@
         }
     }
     var player = new ProxyPlayer();
+
+    // Restart video if no statuses recieved yet.
+    setTimeout(function() {
+        if(!gotten_response) {
+            player.playVideo([true]);
+        }
+    }, 6000);
 
     function restartVideo() {
         player.reset();
