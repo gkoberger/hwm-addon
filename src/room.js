@@ -8,6 +8,7 @@
         allow_adchange = false,
         socket = false,
         winchrome = false,
+        window_focus = true,
         started = false,
         is_paused = false,
         $commercial, $commerical_overlay, pause, status_text, status_action, status_type,
@@ -37,6 +38,12 @@
             is_anon = false;
         }
     }
+
+    jQuery(window).focus(function() {
+        window_focus = true;
+    }).blur(function() {
+        window_focus = false;
+    });
 
     // We have to do special stuff in windows+chrome
     winchrome = jQuery.browser.webkit && navigator.appVersion.indexOf("Win")!=-1;
@@ -278,7 +285,7 @@
             cl(symbol + msg);
 
         }
-        if(msg && !is_me) {
+        if(msg && !is_me && !window_focus) {
             postMessage({'type': 'notify', 'event': event, 'title': title, 'msg': msg});
         }
     }
@@ -299,7 +306,7 @@
         $sb_ul.append($li);
         $sb_out.scrollTop(1000000);
 
-        if(who['id'] != user['id'] && ! jQuery(document.activeElement).is('#sidebar textarea:focus')) {
+        if(who['id'] != user['id'] && !window_focus) {
             postMessage({'type': 'notify', 'event': 'chat', 'title': who['name'] + ' said:', 'msg': m});
         }
     }
