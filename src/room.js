@@ -88,15 +88,28 @@
         /* Add HWM tab */
         jQuery('#watch-title-top').append(jQuery('#description-switch')); // Make the options box wider
         var $tab_a = jQuery('<a>', {'class': 'toggle-w-hwm ' + (hwm_hash_current ? 'on' : ''), 'href': '#', 'id': 'hwm-tab'}),
+            $tab_a_parent = jQuery('<span>', {'class': 'toggle-w-hwm-parent'});
             $tab_div = jQuery('<div>', {'class': 'link-description-damnfirefox36'}),
             $tab_span = jQuery('<span>'),
             $tab_desc = jQuery('<div>', {'class': 'hwm-tab-desc link-description', 'html': '<strong>hulu</strong>withme'});
 
 
-        jQuery('#description-switch').append($tab_a);
+        jQuery('#description-switch').append($tab_a_parent);
+        $tab_a_parent.append($tab_a);
         $tab_a.append($tab_div);
         $tab_div.append($tab_span);
         $tab_div.append($tab_desc);
+
+        // First timers get a box!
+        if(!window.localStorage.getItem('seen-message') && !hwm_hash_current) {
+            var $hwm_intro = jQuery('<div>', {'id': 'hwm-intro', 'class': 'hwm-logo', 'text': 'When you want to watch Hulu with a friend, click this button!'});
+            $hwm_intro.append(jQuery('<a>', {'href':'#', 'text': 'Close this tip'}));
+            $hwm_intro.click(function() {
+                $hwm_intro.remove();
+                window.localStorage['seen-message'] = 1;
+            });
+            $tab_a_parent.append($hwm_intro);
+        }
 
         $tab_a.click(function(e) {
             e.preventDefault();
@@ -104,6 +117,9 @@
                 alert('Huluwithme is already running!');
                 return;
             }
+
+            $hwm_intro.remove();
+            window.localStorage['seen-message'] = 1;
 
             $tab_a.addClass('on');
 
@@ -120,7 +136,7 @@
             var $hwm_pg1 = jQuery('<div>', {'class':'page_1'});
             var $hwm_pg2 = jQuery('<div>', {'class':'page_2'});
 
-            var $hwm_next = jQuery('<button>', {'text': 'Next >'});
+            var $hwm_next = jQuery('<a>', {'text': 'Next »', 'class': 'button', 'href': '#'});
             $hwm_next.click(function(e) {
                 e.preventDefault();
                 $hwm_new_modal.addClass('next');
@@ -130,13 +146,15 @@
             $hwm_new_modal.append(jQuery('<div>', {'id': 'hwm-logo'}));
             $hwm_new_modal.append(jQuery('<p>', {'text': 'Watch your favorite show with your favorite person'}));
             $hwm_pg1.append(jQuery('<label>', {'text': 'Send this link to the person you want to watch with:'}));
-            $hwm_pg1.append($hwm_next);
             $hwm_pg1.append($hwm_new_input);
+            $hwm_pg1.append($hwm_next);
 
             var $hwm_pg2_back = jQuery('<a>', {'text': 'Need the URL again?', 'href': '#'});
             $hwm_pg2_back.click(function(e) {
                 e.preventDefault();
                 $hwm_new_modal.removeClass('next');
+                $hwm_new_input.focus();
+                $hwm_new_input[0].select();
             });
 
             $hwm_pg2.append(jQuery('<label>', {'text': 'Waiting for the other person to join...'}));
@@ -574,7 +592,9 @@
             this.retry(this._playVideo, args, callback, limit);
         }
         this._playVideo = function(arg) {
+            console.log('retrying..');
             if(!player_raw.playVideo) return false;
+            console.log('got it!');
             player_raw.playVideo(arg);
             return true;
         }
@@ -641,9 +661,10 @@
     // Restart video if no statuses recieved yet.
     setTimeout(function() {
         if(!gotten_response) {
-            player.playVideo([true]);
+            console.log('no response...');
+            player.playVideo([true], false, 5);
         }
-    }, 6000);
+    }, 8000);
 
     function restartVideo() {
         player.reset();
