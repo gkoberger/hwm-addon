@@ -102,7 +102,7 @@
 
         // First timers get a box!
         if(!window.localStorage.getItem('seen-message') && !hwm_hash_current) {
-            var $hwm_intro = jQuery('<div>', {'id': 'hwm-intro', 'class': 'hwm-logo', 'text': 'When you want to watch Hulu with a friend, click this button!'});
+            var $hwm_intro = jQuery('<div>', {'id': 'hwm-intro', 'class': 'hwm-logo', 'text': 'When you want to watch Hulu with a friend, click the link below this bubble!'});
             $hwm_intro.append(jQuery('<a>', {'href':'#', 'text': 'Close this tip'}));
             $hwm_intro.click(function() {
                 $hwm_intro.remove();
