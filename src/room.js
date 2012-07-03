@@ -118,8 +118,10 @@
                 return;
             }
 
-            $hwm_intro.remove();
-            window.localStorage['seen-message'] = 1;
+            if($hwm_intro) {
+                $hwm_intro.remove();
+                window.localStorage['seen-message'] = 1;
+            }
 
             $tab_a.addClass('on');
 
